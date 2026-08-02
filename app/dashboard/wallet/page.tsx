@@ -1,0 +1,120 @@
+import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/session";
+import { t } from "@/lib/i18n";
+import { formatUsd } from "@/lib/pricing";
+import { getTopUpTiers } from "@/lib/polar";
+import { startTopUpAction } from "./actions";
+
+export default async function WalletPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topup?: string }>;
+}) {
+  const user = await requireUser();
+  const params = await searchParams;
+  const tiers = getTopUpTiers();
+  const txs = await prisma.walletTx.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  const anyProduct = tiers.some((t) => t.productId);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">{t.wallet.title}</h1>
+        <p className="text-slate-500 text-sm mt-1">{t.wallet.subtitle}</p>
+      </div>
+
+      {params.topup === "success" && (
+        <div className="card border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          {t.wallet.topupSuccess}
+        </div>
+      )}
+      {params.topup === "canceled" && (
+        <div className="card border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          {t.wallet.topupCanceled}
+        </div>
+      )}
+
+      <div className="card p-6">
+        <div className="text-sm text-slate-500">{t.wallet.balance}</div>
+        <div className="text-4xl font-semibold mt-1">
+          {formatUsd(user.walletCents)}
+        </div>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="font-semibold">{t.wallet.chooseAmount}</h2>
+        {!anyProduct && (
+          <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
+            Polar бүтээгдэхүүн ID тохируулаагүй байна. <code>.env</code>-д{" "}
+            <code>POLAR_PRODUCT_ID_10</code> гэх мэтийг нэмнэ үү.
+          </p>
+        )}
+        <div className="grid sm:grid-cols-3 gap-4 mt-4">
+          {tiers.map((tier) => (
+            <form action={startTopUpAction} key={tier.label}>
+              <input type="hidden" name="productId" value={tier.productId ?? ""} />
+              <input
+                type="hidden"
+                name="amountCents"
+                value={tier.amountCents}
+              />
+              <button
+                type="submit"
+                disabled={!tier.productId}
+                className="w-full rounded-lg border border-slate-200 p-5 text-center hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50"
+              >
+                <div className="text-2xl font-semibold">{tier.label}</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {formatUsd(tier.amountCents)} кредит
+                </div>
+              </button>
+            </form>
+          ))}
+        </div>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="font-semibold mb-3">{t.wallet.history}</h2>
+        {txs.length === 0 ? (
+          <p className="text-sm text-slate-500">Гүйлгээ байхгүй.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="text-slate-500 text-xs">
+              <tr>
+                <th className="text-left py-2">Огноо</th>
+                <th className="text-left py-2">Утга</th>
+                <th className="text-right py-2">Дүн</th>
+              </tr>
+            </thead>
+            <tbody>
+              {txs.map((tx) => (
+                <tr key={tx.id} className="border-t">
+                  <td className="py-2 text-slate-600 whitespace-nowrap">
+                    {tx.createdAt.toLocaleString("mn-MN")}
+                  </td>
+                  <td className="py-2 text-slate-700">
+                    {tx.description ?? tx.kind}
+                  </td>
+                  <td
+                    className={
+                      "py-2 text-right font-medium " +
+                      (tx.amountCents >= 0 ? "text-emerald-700" : "text-slate-800")
+                    }
+                  >
+                    {tx.amountCents >= 0 ? "+" : ""}
+                    {formatUsd(tx.amountCents)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}

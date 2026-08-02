@@ -1,0 +1,94 @@
+// Cloud Print SaaS – schema
+// Default: SQLite for local dev. Change provider to "postgresql" in production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  phone         String?
+  walletCents   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  jobs          PrintJob[]
+  transactions  WalletTx[]
+  uploads       Upload[]
+}
+
+model Printer {
+  id                 String   @id @default(cuid())
+  // PrintNode numeric printer id (nullable while offline / newly added)
+  printNodeId        Int?     @unique
+  name               String
+  location           String   // e.g. "СБД, 1-р хороо, Central Tower"
+  district           String   // e.g. "Сүхбаатар дүүрэг"
+  address            String?
+  colorSupported     Boolean  @default(false)
+  duplexSupported    Boolean  @default(false)
+  active             Boolean  @default(true)
+  operatorEmail      String?
+  bwCentsPerPage     Int?     // per-printer override
+  colorCentsPerPage  Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  jobs               PrintJob[]
+}
+
+model Upload {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename    String
+  storedPath  String   // filesystem path under /uploads
+  mimeType    String
+  sizeBytes   Int
+  pageCount   Int?     // best-effort page count for PDFs
+  createdAt   DateTime @default(now())
+
+  jobs        PrintJob[]
+}
+
+model PrintJob {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadId       String
+  upload         Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  printerId      String
+  printer        Printer   @relation(fields: [printerId], references: [id])
+  copies         Int       @default(1)
+  color          Boolean   @default(false)
+  duplex         Boolean   @default(false)
+  pageCount      Int       @default(1)
+  costCents      Int       @default(0)
+  status         String    @default("queued") // queued | sent | printed | failed | canceled
+  printNodeJobId Int?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WalletTx {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // positive for top-up, negative for spend
+  amountCents       Int
+  kind              String   // "topup" | "spend" | "refund" | "adjustment"
+  description       String?
+  // Polar (Stripe-backed) references
+  polarCheckoutId   String?
+  polarOrderId      String?
+  createdAt         DateTime @default(now())
+}

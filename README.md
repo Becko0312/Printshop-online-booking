@@ -7,7 +7,21 @@ Web app for Ulaanbaatar's **Cloud Print** service:
 - 💳 **Wallet** model: users buy USD credits via **[Polar.sh](https://polar.sh)** (Stripe-backed) and each print debits per page
 - 🇲🇳 UI is entirely in **Mongolian (Cyrillic)**
 
-Built with Next.js 15 (App Router) + Prisma + Tailwind.
+Built with Next.js 15 (App Router) + Prisma + **Neon Postgres** + Tailwind.
+
+---
+
+## What's already provisioned
+
+The MCP-driven setup has already:
+
+- **Neon project** `khevlekh-uul` (org `Bilguun`, project id `floral-sun-70811312`, DB `neondb`) with the full Prisma schema applied and 12 partner-shop rows seeded.
+- **Polar org** `Bichig` (`9283aa18-071f-4438-a045-ad9a28900005`, USD, MN) with three one-time products:
+  - `$10` → `3372c44d-935b-402e-942f-ca0c6f9232c7`
+  - `$25` → `3d5beae5-efff-4e55-8997-aa471532ceaf`
+  - `$50` → `4a77827c-d1b9-4367-b124-c097c2d99689`
+
+Those IDs are already baked into `.env.example`. You only need to add secrets (Neon connection string, Polar access token + webhook secret, PrintNode API key, `AUTH_SECRET`).
 
 ---
 
@@ -16,15 +30,16 @@ Built with Next.js 15 (App Router) + Prisma + Tailwind.
 ```bash
 npm install
 cp .env.example .env
-# Edit .env — set AUTH_SECRET at minimum
-npx prisma migrate dev --name init
-npx tsx scripts/seed.ts     # seeds 12 sample partner shops
+# Paste your Neon DATABASE_URL + DATABASE_URL_UNPOOLED into .env
+# Fill AUTH_SECRET, PRINTNODE_API_KEY, POLAR_ACCESS_TOKEN, POLAR_WEBHOOK_SECRET
+npx prisma migrate deploy        # applies the checked-in migration to Neon
+npm run db:seed                  # 12 sample partner shops
 npm run dev
 ```
 
 Open http://localhost:3000 — sign up, then visit `/dashboard`.
 
-> The wallet top-up buttons need Polar product IDs to be set in `.env`. Without them, the print flow still works if you manually credit your account via `prisma studio`.
+> Without a `POLAR_ACCESS_TOKEN` the wallet top-up buttons will error on submit. You can still manually credit your account via `npx prisma studio` while testing.
 
 ---
 
@@ -32,12 +47,14 @@ Open http://localhost:3000 — sign up, then visit `/dashboard`.
 
 | Var | Purpose |
 | --- | --- |
-| `DATABASE_URL` | Prisma datasource. Default: `file:./dev.db` (SQLite). For prod, use Postgres and change `provider` in `prisma/schema.prisma` |
+| `DATABASE_URL` | Neon **pooled** connection string (used at runtime) |
+| `DATABASE_URL_UNPOOLED` | Neon **direct** URL (used by `prisma migrate`) |
 | `AUTH_SECRET` | Long random string used to sign session JWT cookies |
 | `PRINTNODE_API_KEY` | From your PrintNode dashboard |
-| `POLAR_ACCESS_TOKEN` | Polar personal access token (organization scope) |
-| `POLAR_WEBHOOK_SECRET` | `whsec_…` — Polar sends this when you register the webhook |
-| `POLAR_PRODUCT_ID_10` / `_25` / `_50` | IDs of your $10 / $25 / $50 wallet top-up products |
+| `POLAR_ACCESS_TOKEN` | Personal access token scoped to the Bichig org |
+| `POLAR_WEBHOOK_SECRET` | `whsec_…` — returned when you register the webhook endpoint |
+| `POLAR_ORG_ID` | Polar organization id — pre-filled in `.env.example` |
+| `POLAR_PRODUCT_ID_10` / `_25` / `_50` | Wallet top-up product IDs — pre-filled |
 | `NEXT_PUBLIC_APP_URL` | Public origin; used for Polar success/cancel URLs |
 | `PRICE_BW_CENTS_PER_PAGE` | Default 10 (`$0.10`) |
 | `PRICE_COLOR_CENTS_PER_PAGE` | Default 30 (`$0.30`) |
@@ -66,10 +83,10 @@ Per-printer overrides live on the `Printer` row (`bwCentsPerPage`, `colorCentsPe
 
 ## Polar.sh (wallet) setup
 
-1. Create an organization on https://polar.sh, then create three products — "$10 credits", "$25 credits", "$50 credits" — priced accordingly.
-2. Grab a personal access token and drop it in `POLAR_ACCESS_TOKEN`.
-3. Add the three product IDs to `.env` (`POLAR_PRODUCT_ID_10`, `_25`, `_50`).
-4. **Webhook**: register `https://your-app/api/webhooks/polar` in the Polar dashboard and paste the returned `whsec_…` into `POLAR_WEBHOOK_SECRET`.
+The org and three top-up products are already provisioned (see above). To finish wiring:
+
+1. Generate a personal access token in the Polar dashboard for the `Bichig` org with `products:read`, `checkouts:write`, and `webhooks:read` scopes. Drop it in `POLAR_ACCESS_TOKEN`.
+2. **Webhook**: register `https://your-app/api/webhooks/polar` in the Polar dashboard, subscribe to `order.paid` / `checkout.updated`, and paste the returned `whsec_…` into `POLAR_WEBHOOK_SECRET`.
 
 When a user clicks a top-up tier, we:
 

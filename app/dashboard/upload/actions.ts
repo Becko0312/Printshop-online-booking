@@ -1,17 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { countPdfPages } from "@/lib/pdf";
 import { estimateCostCents, perPageCents } from "@/lib/pricing";
 import { createPrintJob } from "@/lib/printnode";
+import { saveUpload, contentForPrintNode } from "@/lib/storage";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 
 const ALLOWED = new Set([
@@ -37,18 +34,22 @@ export async function uploadFileAction(formData: FormData): Promise<UploadResult
   }
 
   const buf = Buffer.from(await file.arrayBuffer());
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-  const stored = `${randomUUID()}-${sanitize(file.name)}`;
-  await fs.writeFile(path.join(UPLOAD_DIR, stored), buf);
-
   const pageCount =
     file.type === "application/pdf" ? countPdfPages(buf) : null;
+
+  let stored;
+  try {
+    stored = await saveUpload(buf, file.name, file.type);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Файл хадгалахад алдаа гарлаа.";
+    return { ok: false, error: msg };
+  }
 
   const upload = await prisma.upload.create({
     data: {
       userId: user.id,
       filename: file.name,
-      storedPath: stored,
+      storedPath: stored.storedPath,
       mimeType: file.type,
       sizeBytes: file.size,
       pageCount: pageCount ?? undefined,
@@ -62,10 +63,6 @@ export async function uploadFileAction(formData: FormData): Promise<UploadResult
     filename: upload.filename,
     mimeType: upload.mimeType,
   };
-}
-
-function sanitize(s: string): string {
-  return s.replace(/[^\w.\-]+/g, "_").slice(0, 120);
 }
 
 const submitSchema = z.object({
@@ -160,13 +157,12 @@ export async function submitPrintJobAction(
   // "queued" so shops can pick up manually.)
   try {
     if (!printer.printNodeId) throw new Error("Хэвлэгч PrintNode-д холбогдоогүй.");
-    const contentBase64 = await readUploadAsBase64(upload.storedPath);
-    const contentType = upload.mimeType === "application/pdf" ? "pdf_base64" : "raw_base64";
+    const payload = await contentForPrintNode(upload.storedPath, upload.mimeType);
     const printNodeJobId = await createPrintJob({
       printerId: printer.printNodeId,
       title: upload.filename,
-      contentType,
-      content: contentBase64,
+      contentType: payload.contentType,
+      content: payload.content,
       source: "khevlekh-uul",
       options: {
         copies: parsed.data.copies,
@@ -205,12 +201,6 @@ export async function submitPrintJobAction(
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/jobs");
   return { ok: true, jobId: job.id };
-}
-
-async function readUploadAsBase64(stored: string): Promise<string> {
-  const full = path.join(UPLOAD_DIR, stored);
-  const buf = await fs.readFile(full);
-  return buf.toString("base64");
 }
 
 export async function getPriceQuoteAction(input: {

@@ -141,8 +141,9 @@ scripts/seed.ts               12 sample partner shops
 
 ## Deploying
 
-- **Vercel / any Node host** — SQLite works for demos; use Neon/Supabase Postgres for prod (change `provider` in `prisma/schema.prisma` to `postgresql`, run `prisma migrate deploy`).
-- Uploaded files live under `/uploads` on the server disk. For serverless, swap `app/dashboard/upload/actions.ts` to write to S3 / Supabase Storage / R2, and pass a `pdf_uri` (public or signed) to PrintNode instead of base64.
+- **Vercel** — connect the repo, set env vars, deploy. Storage → Blob → **Create** provisions `BLOB_READ_WRITE_TOKEN` automatically; `lib/storage.ts` then routes user uploads to Vercel Blob and hands PrintNode a public URL (`pdf_uri`) instead of base64.
+- **Local dev** — leaving `BLOB_READ_WRITE_TOKEN` unset falls back to writing files under `./uploads` on disk so `npm run dev` works out of the box.
+- **Other hosts** — swap `lib/storage.ts` for your object store of choice (Supabase Storage / Cloudflare R2 / S3). The rest of the app doesn't care where the URL comes from.
 - Polar webhook URL must be publicly reachable, so use a tunnel (ngrok, `polar dev`) locally.
 
 ---

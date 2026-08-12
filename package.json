@@ -17,6 +17,7 @@
   "dependencies": {
     "@polar-sh/sdk": "^0.24.0",
     "@prisma/client": "^5.22.0",
+    "@vercel/blob": "^0.27.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",

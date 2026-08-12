@@ -15,7 +15,16 @@ import { randomUUID } from "node:crypto";
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
 export function isBlobEnabled(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
+  // Three ways Vercel Blob can be authenticated:
+  //   1. Explicit BLOB_READ_WRITE_TOKEN (works everywhere, incl. local dev)
+  //   2. OIDC connection on Vercel — SDK reads BLOB_STORE_ID and uses the
+  //      runtime OIDC token automatically (no explicit secret needed)
+  //   3. Any Vercel runtime with a store connected — safe default
+  return !!(
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.BLOB_STORE_ID ||
+    process.env.VERCEL
+  );
 }
 
 function sanitize(s: string): string {
@@ -48,9 +57,10 @@ export async function saveUpload(
 
   if (process.env.NODE_ENV === "production") {
     throw new Error(
-      "BLOB_READ_WRITE_TOKEN is not set. Enable Vercel Blob on this project " +
-        "(Storage → Blob → Create) and add the auto-generated token to your " +
-        "environment variables. On Vercel this happens with one click.",
+      "Vercel Blob is not configured. On Vercel: Storage → Blob → Create and " +
+        "connect the store to this project (either OIDC or a static " +
+        "BLOB_READ_WRITE_TOKEN works). Locally, add BLOB_READ_WRITE_TOKEN to " +
+        ".env.",
     );
   }
 

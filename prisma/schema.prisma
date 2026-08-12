@@ -24,6 +24,7 @@ model User {
   jobs          PrintJob[]
   transactions  WalletTx[]
   uploads       Upload[]
+  redemptions   PromoRedemption[]
 }
 
 model Printer {
@@ -86,10 +87,42 @@ model WalletTx {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   // positive for top-up, negative for spend
   amountCents       Int
-  kind              String   // "topup" | "spend" | "refund" | "adjustment"
+  kind              String   // "topup" | "spend" | "refund" | "adjustment" | "promo"
   description       String?
   // Polar (Stripe-backed) references
   polarCheckoutId   String?
   polarOrderId      String?
   createdAt         DateTime @default(now())
+}
+
+// A redeemable promo code that grants wallet credit (e.g. "free printing").
+// Redeeming a code tops up the user's wallet, which the print flow then
+// debits — so no special-casing is needed elsewhere.
+model PromoCode {
+  id             String            @id @default(cuid())
+  code           String            @unique // stored uppercase, e.g. "FREEPRINT2026"
+  valueCents     Int               // credit granted per redemption
+  maxRedemptions Int?              // total cap across all users; null = unlimited
+  redeemedCount  Int               @default(0)
+  active         Boolean           @default(true)
+  expiresAt      DateTime?         // null = never expires
+  note           String?           // internal label
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  redemptions    PromoRedemption[]
+}
+
+// One row per (code, user). The unique constraint enforces "once per user".
+model PromoRedemption {
+  id          String    @id @default(cuid())
+  promoCodeId String
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int
+  createdAt   DateTime  @default(now())
+
+  @@unique([promoCodeId, userId])
+  @@index([userId])
 }

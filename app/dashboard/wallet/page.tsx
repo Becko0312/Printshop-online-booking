@@ -3,15 +3,26 @@ import { requireUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import { formatUsd } from "@/lib/pricing";
 import { getTopUpTiers } from "@/lib/polar";
-import { startTopUpAction } from "./actions";
+import { startTopUpAction, redeemPromoAction } from "./actions";
+
+const PROMO_ERRORS: Record<string, string> = {
+  empty: t.promo.errEmpty,
+  invalid: t.promo.errInvalid,
+  expired: t.promo.errExpired,
+  exhausted: t.promo.errExhausted,
+  used: t.promo.errUsed,
+  error: t.promo.errGeneric,
+};
 
 export default async function WalletPage({
   searchParams,
 }: {
-  searchParams: Promise<{ topup?: string }>;
+  searchParams: Promise<{ topup?: string; promo?: string; amt?: string }>;
 }) {
   const user = await requireUser();
   const params = await searchParams;
+  const promoError = params.promo ? PROMO_ERRORS[params.promo] : undefined;
+  const promoAmt = Number(params.amt ?? 0);
   const tiers = getTopUpTiers();
   const txs = await prisma.walletTx.findMany({
     where: { userId: user.id },
@@ -38,12 +49,44 @@ export default async function WalletPage({
           {t.wallet.topupCanceled}
         </div>
       )}
+      {params.promo === "success" && (
+        <div className="card border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          {t.promo.success} <strong>{formatUsd(promoAmt)}</strong>
+        </div>
+      )}
+      {promoError && (
+        <div className="card border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          {promoError}
+        </div>
+      )}
 
       <div className="card p-6">
         <div className="text-sm text-slate-500">{t.wallet.balance}</div>
         <div className="text-4xl font-semibold mt-1">
           {formatUsd(user.walletCents)}
         </div>
+      </div>
+
+      <div className="card p-6">
+        <h2 className="font-semibold">{t.promo.title}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t.promo.subtitle}</p>
+        <form action={redeemPromoAction} className="mt-4 flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            name="code"
+            required
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={t.promo.placeholder}
+            className="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 uppercase tracking-wide focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          <button
+            type="submit"
+            className="rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-700"
+          >
+            {t.promo.redeem}
+          </button>
+        </form>
       </div>
 
       <div className="card p-6">

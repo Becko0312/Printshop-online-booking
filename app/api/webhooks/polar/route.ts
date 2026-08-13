@@ -24,37 +24,34 @@ export async function POST(req: Request) {
     type?: string;
     data?: {
       id?: string;
-      checkout_id?: string;
       metadata?: Record<string, string> | null;
-      amount?: number;
     };
   };
 
-  // Fire on any "paid" order/checkout event. Polar sends several event types
-  // — we accept both order.paid and checkout.updated with status paid.
+  // Credit the wallet ONLY on `order.paid` — the single definitive "money
+  // received" event for a one-time purchase. A purchase also emits
+  // order.created / order.updated / checkout.updated, each with a *different*
+  // id, so acting on more than one would bypass the id-based idempotency guard
+  // below and credit the wallet multiple times.
   const type = e.type ?? "";
-  const isPaid =
-    type === "order.paid" ||
-    type === "order.created" ||
-    type === "checkout.completed" ||
-    type === "checkout.updated";
-  if (!isPaid) return NextResponse.json({ ok: true, ignored: type });
+  if (type !== "order.paid") {
+    return NextResponse.json({ ok: true, ignored: type || "unknown" });
+  }
 
+  // Polar copies the checkout `metadata` onto the resulting order, so userId
+  // and the exact wallet credit round-trip through here.
   const meta = e.data?.metadata ?? {};
   const userId = meta.userId;
-  const amountCents = Number(meta.amountCents ?? e.data?.amount ?? 0);
+  const amountCents = Number(meta.amountCents ?? 0);
   if (!userId || !amountCents) {
     return NextResponse.json({ ok: true, ignored: "missing metadata" });
   }
 
-  const polarRef = e.data?.id ?? e.data?.checkout_id ?? "";
-  // Idempotency: skip if we've already credited this Polar id.
-  if (polarRef) {
+  const orderId = e.data?.id ?? "";
+  // Idempotency: Polar may retry delivery of the same order.paid event.
+  if (orderId) {
     const existing = await prisma.walletTx.findFirst({
-      where: {
-        userId,
-        OR: [{ polarOrderId: polarRef }, { polarCheckoutId: polarRef }],
-      },
+      where: { userId, polarOrderId: orderId },
     });
     if (existing) return NextResponse.json({ ok: true, alreadyCredited: true });
   }
@@ -69,9 +66,8 @@ export async function POST(req: Request) {
         userId,
         amountCents,
         kind: "topup",
-        description: `Polar цэнэглэлт (${type})`,
-        polarOrderId: type.startsWith("order") ? polarRef : undefined,
-        polarCheckoutId: type.startsWith("checkout") ? polarRef : undefined,
+        description: "Polar цэнэглэлт",
+        polarOrderId: orderId || undefined,
       },
     }),
   ]);

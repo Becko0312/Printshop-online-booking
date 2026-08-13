@@ -172,7 +172,8 @@ export async function submitPrintJobAction(
     });
     await prisma.printJob.update({
       where: { id: job.id },
-      data: { status: "sent", printNodeJobId },
+      // printNodeJobId is a BigInt column; PrintNode returns a plain number.
+      data: { status: "sent", printNodeJobId: BigInt(printNodeJobId) },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Тодорхойгүй алдаа";

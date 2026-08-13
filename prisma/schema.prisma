@@ -75,7 +75,8 @@ model PrintJob {
   pageCount      Int       @default(1)
   costCents      Int       @default(0)
   status         String    @default("queued") // queued | sent | printed | failed | canceled
-  printNodeJobId Int?
+  // PrintNode job ids exceed 32-bit int range — must be BigInt.
+  printNodeJobId BigInt?
   errorMessage   String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

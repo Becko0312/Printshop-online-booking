@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 
 export default async function DashboardHome() {
   const user = await requireUser();
@@ -31,7 +31,7 @@ export default async function DashboardHome() {
         <div className="card p-5">
           <div className="text-sm text-slate-500">{t.dashboard.walletBalance}</div>
           <div className="text-3xl font-semibold mt-1">
-            {formatUsd(user.walletCents)}
+            {formatMnt(user.walletCents)}
           </div>
           <Link href="/dashboard/wallet" className="btn-secondary mt-4">
             {t.dashboard.topUp}
@@ -76,7 +76,7 @@ export default async function DashboardHome() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-slate-700">{formatUsd(j.costCents)}</div>
+                  <div className="text-slate-700">{formatMnt(j.costCents)}</div>
                   <div className="text-slate-500 text-xs">
                     {statusLabel(j.status)}
                   </div>

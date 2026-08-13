@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireMerchant } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 import {
   dailyStatsForPrinters,
   sumStats,
@@ -33,12 +33,12 @@ export default async function MerchantHome() {
         <StatCard label={t.merchant.todayPages} value={today.pages} />
         <StatCard
           label={t.merchant.todayRevenue}
-          value={formatUsd(today.revenueCents)}
+          value={formatMnt(today.revenueCents)}
         />
         <StatCard label={t.merchant.printerCount} value={printers.length} />
         <StatCard
           label={t.merchant.windowRevenue}
-          value={formatUsd(totals.revenueCents)}
+          value={formatMnt(totals.revenueCents)}
         />
       </div>
 

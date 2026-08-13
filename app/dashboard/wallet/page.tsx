@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
-import { getTopUpTiers } from "@/lib/polar";
-import { startTopUpAction, redeemPromoAction } from "./actions";
+import { formatMnt } from "@/lib/pricing";
+import { getBonumTiers, isConfigured as bonumConfigured } from "@/lib/bonum";
+import { startBonumTopUpAction, redeemPromoAction } from "./actions";
 
 const PROMO_ERRORS: Record<string, string> = {
   empty: t.promo.errEmpty,
@@ -23,14 +23,13 @@ export default async function WalletPage({
   const params = await searchParams;
   const promoError = params.promo ? PROMO_ERRORS[params.promo] : undefined;
   const promoAmt = Number(params.amt ?? 0);
-  const tiers = getTopUpTiers();
+  const tiers = getBonumTiers();
+  const configured = bonumConfigured();
   const txs = await prisma.walletTx.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     take: 50,
   });
-
-  const anyProduct = tiers.some((t) => t.productId);
 
   return (
     <div className="space-y-6">
@@ -49,9 +48,14 @@ export default async function WalletPage({
           {t.wallet.topupCanceled}
         </div>
       )}
+      {params.topup === "pending" && (
+        <div className="card border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
+          {t.wallet.topupPending}
+        </div>
+      )}
       {params.promo === "success" && (
         <div className="card border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-          {t.promo.success} <strong>{formatUsd(promoAmt)}</strong>
+          {t.promo.success} <strong>{formatMnt(promoAmt)}</strong>
         </div>
       )}
       {promoError && (
@@ -63,7 +67,7 @@ export default async function WalletPage({
       <div className="card p-6">
         <div className="text-sm text-slate-500">{t.wallet.balance}</div>
         <div className="text-4xl font-semibold mt-1">
-          {formatUsd(user.walletCents)}
+          {formatMnt(user.walletCents)}
         </div>
       </div>
 
@@ -90,30 +94,25 @@ export default async function WalletPage({
       </div>
 
       <div className="card p-6">
-        <h2 className="font-semibold">{t.wallet.chooseAmount}</h2>
-        {!anyProduct && (
+        <h2 className="font-semibold">{t.wallet.bonumTitle}</h2>
+        <p className="mt-1 text-sm text-slate-500">{t.wallet.bonumHint}</p>
+        {!configured && (
           <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-            Polar бүтээгдэхүүн ID тохируулаагүй байна. <code>.env</code>-д{" "}
-            <code>POLAR_PRODUCT_ID_10</code> гэх мэтийг нэмнэ үү.
+            {t.wallet.bonumUnconfigured}
           </p>
         )}
-        <div className="grid sm:grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           {tiers.map((tier) => (
-            <form action={startTopUpAction} key={tier.label}>
-              <input type="hidden" name="productId" value={tier.productId ?? ""} />
-              <input
-                type="hidden"
-                name="amountCents"
-                value={tier.amountCents}
-              />
+            <form action={startBonumTopUpAction} key={tier.label}>
+              <input type="hidden" name="amountMnt" value={tier.amountMnt} />
               <button
                 type="submit"
-                disabled={!tier.productId}
+                disabled={!configured}
                 className="w-full rounded-lg border border-slate-200 p-5 text-center hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50"
               >
                 <div className="text-2xl font-semibold">{tier.label}</div>
                 <div className="text-xs text-slate-500 mt-1">
-                  {formatUsd(tier.amountCents)} кредит
+                  {formatMnt(tier.amountMnt)} кредит
                 </div>
               </button>
             </form>
@@ -150,7 +149,7 @@ export default async function WalletPage({
                     }
                   >
                     {tx.amountCents >= 0 ? "+" : ""}
-                    {formatUsd(tx.amountCents)}
+                    {formatMnt(tx.amountCents)}
                   </td>
                 </tr>
               ))}

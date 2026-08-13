@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 
 export default async function JobsPage() {
   const user = await requireUser();
@@ -44,7 +44,7 @@ export default async function JobsPage() {
                     {j.pageCount} × {j.copies}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {formatUsd(j.costCents)}
+                    {formatMnt(j.costCents)}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span

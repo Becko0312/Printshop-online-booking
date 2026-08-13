@@ -5,6 +5,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { createCheckoutSession, getTopUpTiers } from "@/lib/polar";
+import {
+  createInvoice,
+  getBonumTiers,
+  buildTransactionId,
+} from "@/lib/bonum";
+import { randomUUID } from "crypto";
 
 export async function startTopUpAction(formData: FormData): Promise<void> {
   const user = await requireUser();
@@ -32,6 +38,33 @@ export async function startTopUpAction(formData: FormData): Promise<void> {
   });
 
   redirect(checkout.url);
+}
+
+// Start a wallet top-up paid through Bonum Gateway (card / QPay / etc.).
+// We create a hosted invoice and redirect the user to Bonum's payment page.
+// The wallet is credited later, when Bonum calls our webhook — see
+// app/api/webhooks/bonum/route.ts. The user id is embedded in the Bonum
+// transactionId so the webhook can resolve the account.
+export async function startBonumTopUpAction(formData: FormData): Promise<void> {
+  const user = await requireUser();
+  const amountMnt = Number(formData.get("amountMnt") ?? 0);
+  const tier = getBonumTiers().find((t) => t.amountMnt === amountMnt);
+  if (!tier) {
+    throw new Error("Багц олдсонгүй.");
+  }
+
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+  const transactionId = buildTransactionId(user.id, randomUUID().slice(0, 8));
+
+  const invoice = await createInvoice({
+    amount: tier.amountMnt,
+    transactionId,
+    callbackUrl: `${base}/api/webhooks/bonum`,
+    description: `Хэтэвч цэнэглэлт — ${tier.label}`,
+  });
+
+  redirect(invoice.followUpLink);
 }
 
 // Redeem a promo code: validates the code, then atomically records the

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 import { cn } from "@/lib/ui";
 import {
   uploadFileAction,
@@ -255,7 +255,7 @@ export default function UploadClient({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-600">{t.upload.estCost}</span>
                 <span className="font-semibold text-lg">
-                  {formatUsd(totalCents)}
+                  {formatMnt(totalCents)}
                 </span>
               </div>
               <div className="text-xs text-slate-500 mt-1">
@@ -263,7 +263,7 @@ export default function UploadClient({
                 {t.common.copies}
               </div>
               <div className="mt-2 text-xs text-slate-500">
-                {t.dashboard.walletBalance}: {formatUsd(walletCents)}
+                {t.dashboard.walletBalance}: {formatMnt(walletCents)}
               </div>
             </div>
 

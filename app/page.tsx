@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 
 const bw = Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10);
 const color = Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30);
@@ -39,7 +39,7 @@ export default function LandingPage() {
               <div className="rounded-lg bg-slate-50 p-4">
                 <div className="text-xs text-slate-500">{t.landing.priceBw}</div>
                 <div className="text-2xl font-semibold mt-1">
-                  {formatUsd(bw)}
+                  {formatMnt(bw)}
                 </div>
                 <div className="text-xs text-slate-500">/ {t.common.pages}</div>
               </div>
@@ -48,7 +48,7 @@ export default function LandingPage() {
                   {t.landing.priceColor}
                 </div>
                 <div className="text-2xl font-semibold mt-1">
-                  {formatUsd(color)}
+                  {formatMnt(color)}
                 </div>
                 <div className="text-xs text-slate-500">/ {t.common.pages}</div>
               </div>

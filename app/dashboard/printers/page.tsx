@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 
 export default async function PrintersPage() {
   await requireUser();
@@ -73,9 +73,9 @@ export default async function PrintersPage() {
                   </div>
                   <div className="mt-3 text-xs text-slate-500">
                     Хар/цагаан:{" "}
-                    {formatUsd(p.bwCentsPerPage ?? Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10))}{" "}
+                    {formatMnt(p.bwCentsPerPage ?? Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10))}{" "}
                     · Өнгөт:{" "}
-                    {formatUsd(p.colorCentsPerPage ?? Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30))}
+                    {formatMnt(p.colorCentsPerPage ?? Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30))}
                   </div>
                 </li>
               ))}

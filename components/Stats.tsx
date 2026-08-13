@@ -1,4 +1,4 @@
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 import { t } from "@/lib/i18n";
 import type { DailyStat } from "@/lib/analytics";
 
@@ -41,7 +41,7 @@ export function DailyTable({ stats }: { stats: DailyStat[] }) {
                   {s.jobs}
                 </td>
                 <td className="py-2 text-right tabular-nums">
-                  {formatUsd(s.revenueCents)}
+                  {formatMnt(s.revenueCents)}
                 </td>
               </tr>
             ))}

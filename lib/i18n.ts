@@ -118,12 +118,18 @@ export const t = {
   },
   wallet: {
     title: "Кредит хэтэвч",
-    subtitle: "Polar.sh (Stripe)-ээр аюулгүй цэнэглэнэ.",
+    subtitle: "Bonum Gateway-ээр (карт, QPay) аюулгүй цэнэглэнэ.",
     balance: "Одоогийн үлдэгдэл",
     chooseAmount: "Цэнэглэх дүнгээ сонгоно уу",
     history: "Гүйлгээний түүх",
     topupSuccess: "Төлбөр амжилттай! Хэтэвч цэнэглэгдлээ.",
     topupCanceled: "Төлбөр цуцлагдлаа.",
+    topupPending:
+      "Төлбөрийг хүлээн авч байна. Амжилттай бол хэтэвч хэдхэн секундэд цэнэглэгдэнэ.",
+    bonumTitle: "Bonum-ээр цэнэглэх",
+    bonumHint: "Дүнгээ сонгоод Bonum-ийн төлбөрийн хуудас руу шилжинэ.",
+    bonumUnconfigured:
+      "Bonum Gateway тохируулаагүй байна. .env-д BONUM_TERMINAL_ID, BONUM_APP_SECRET, BONUM_CHECKSUM_KEY-г нэмнэ үү.",
   },
   merchant: {
     title: "Хэвлэгчийн самбар",

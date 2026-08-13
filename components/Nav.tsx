@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { t } from "@/lib/i18n";
 import { getCurrentUser } from "@/lib/session";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 
 export default async function Nav() {
   const user = await getCurrentUser();
@@ -18,7 +18,7 @@ export default async function Nav() {
           {user ? (
             <>
               <span className="hidden sm:inline text-slate-500">
-                {formatUsd(user.walletCents)}
+                {formatMnt(user.walletCents)}
               </span>
               <Link href="/dashboard" className="btn-secondary">
                 {t.dashboard.title}

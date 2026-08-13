@@ -2,7 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 import { perMerchantSummaries } from "@/lib/analytics";
 import { StatCard } from "@/components/Stats";
 
@@ -29,7 +29,7 @@ export default async function AdminHome() {
         <StatCard label={t.admin.merchants} value={merchantCount} />
         <StatCard label={t.admin.printers} value={printerCount} />
         <StatCard label={t.admin.todayPages} value={todayPages} />
-        <StatCard label={t.admin.todayRevenue} value={formatUsd(todayRevenue)} />
+        <StatCard label={t.admin.todayRevenue} value={formatMnt(todayRevenue)} />
       </div>
 
       <div className="card p-5">
@@ -67,11 +67,11 @@ export default async function AdminHome() {
                     <td className="py-2 text-right tabular-nums">{s.printerCount}</td>
                     <td className="py-2 text-right tabular-nums">{s.today.pages}</td>
                     <td className="py-2 text-right tabular-nums">
-                      {formatUsd(s.today.revenueCents)}
+                      {formatMnt(s.today.revenueCents)}
                     </td>
                     <td className="py-2 text-right tabular-nums">{s.totals.pages}</td>
                     <td className="py-2 text-right tabular-nums">
-                      {formatUsd(s.totals.revenueCents)}
+                      {formatMnt(s.totals.revenueCents)}
                     </td>
                   </tr>
                 ))}

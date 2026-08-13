@@ -111,6 +111,10 @@ model WalletTx {
   // Polar (Stripe-backed) references
   polarCheckoutId   String?
   polarOrderId      String?
+  // Bonum Gateway references. bonumInvoiceId is the idempotency key for the
+  // payment webhook (Bonum may retry delivery of the same PAYMENT event).
+  bonumInvoiceId    String?  @unique
+  bonumTransactionId String?
   createdAt         DateTime @default(now())
 }
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { t } from "@/lib/i18n";
-import { formatUsd } from "@/lib/pricing";
+import { formatMnt } from "@/lib/pricing";
 import { signOutAction } from "@/app/auth/actions";
 
 export default async function DashboardLayout({
@@ -33,7 +33,7 @@ export default async function DashboardLayout({
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <span className="chip bg-brand-50 text-brand-700">
-              {t.dashboard.walletBalance}: {formatUsd(user.walletCents)}
+              {t.dashboard.walletBalance}: {formatMnt(user.walletCents)}
             </span>
             <span className="hidden sm:inline text-slate-500">{user.email}</span>
             <form action={signOutAction}>

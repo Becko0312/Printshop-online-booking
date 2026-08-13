@@ -6,12 +6,29 @@ import {
   type BonumWebhook,
 } from "@/lib/bonum";
 
-// Bonum Gateway webhook. Register this URL in the merchant portal
-// (merchant.bonum.mn): <APP_URL>/api/webhooks/bonum
+// Bonum Gateway callback endpoint. This one URL serves two roles, because
+// Bonum uses the invoice `callback` for both:
+//   • POST  — the server-to-server payment webhook (handled below).
+//   • GET   — the customer's browser when they tap "Back to <merchant>" on the
+//             hosted payment page. We bounce them to the wallet (see GET).
+// Register this URL in the merchant portal (merchant.bonum.mn):
+//   <APP_URL>/api/webhooks/bonum
 //
-// Bonum signs the raw body with HMAC-SHA256 (merchant checksum key), hex, in
-// the `x-checksum-v2` header. We verify over the raw bytes, then credit the
+// Bonum signs the raw POST body with HMAC-SHA256 (merchant checksum key), hex,
+// in the `x-checksum-v2` header. We verify over the raw bytes, then credit the
 // wallet on a successful PAYMENT. The amount paid (₮) maps to walletCents 1:1.
+
+// Browser return from the hosted payment page. Bonum sends no status in this
+// navigation, so we land on the wallet in a neutral "pending" state — the POST
+// webhook is the authoritative credit and usually arrives within a second.
+export async function GET() {
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+  return NextResponse.redirect(
+    new URL("/dashboard/wallet?topup=pending", base),
+    303,
+  );
+}
 export async function POST(req: Request) {
   const raw = await req.text();
 

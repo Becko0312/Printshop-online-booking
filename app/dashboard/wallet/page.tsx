@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { formatMnt } from "@/lib/pricing";
 import { getBonumTiers, isConfigured as bonumConfigured } from "@/lib/bonum";
 import { startBonumTopUpAction, redeemPromoAction } from "./actions";
+import RefreshOnPending from "./RefreshOnPending";
 
 const PROMO_ERRORS: Record<string, string> = {
   empty: t.promo.errEmpty,
@@ -51,6 +52,7 @@ export default async function WalletPage({
       {params.topup === "pending" && (
         <div className="card border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
           {t.wallet.topupPending}
+          <RefreshOnPending />
         </div>
       )}
       {params.topup === "invalid" && (

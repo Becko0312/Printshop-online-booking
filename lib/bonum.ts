@@ -206,17 +206,31 @@ export type BonumWebhook = {
 };
 
 // -----------------------------------------------------------------------------
-// Wallet top-up tiers surfaced in the UI. `amountMnt` is both charged at Bonum
-// and credited to the wallet (1 wallet unit = ₮1).
+// Wallet top-up amounts. Charges are made in whole ₮1,000 units: the minimum
+// top-up is ₮1,000 and any higher amount must be a multiple of ₮1,000
+// (₮1,000 / ₮2,000 / ₮3,000 …). The paid amount credits the wallet 1:1.
 // -----------------------------------------------------------------------------
+export const TOPUP_MIN_MNT = 1_000;
+export const TOPUP_STEP_MNT = 1_000;
+
+export function isValidTopUpAmount(mnt: number): boolean {
+  return (
+    Number.isInteger(mnt) &&
+    mnt >= TOPUP_MIN_MNT &&
+    mnt % TOPUP_STEP_MNT === 0
+  );
+}
+
+// Quick-pick presets surfaced in the UI (each a multiple of ₮1,000). Users can
+// also enter any valid custom amount — see isValidTopUpAmount().
 export type BonumTier = { label: string; amountMnt: number };
 
 export function getBonumTiers(): BonumTier[] {
   return [
+    { label: "₮1,000", amountMnt: 1_000 },
+    { label: "₮2,000", amountMnt: 2_000 },
+    { label: "₮5,000", amountMnt: 5_000 },
     { label: "₮10,000", amountMnt: 10_000 },
-    { label: "₮30,000", amountMnt: 30_000 },
-    { label: "₮50,000", amountMnt: 50_000 },
-    { label: "₮100,000", amountMnt: 100_000 },
   ];
 }
 

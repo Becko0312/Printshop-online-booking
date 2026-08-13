@@ -7,9 +7,10 @@ import { requireUser } from "@/lib/session";
 import { createCheckoutSession, getTopUpTiers } from "@/lib/polar";
 import {
   createInvoice,
-  getBonumTiers,
+  isValidTopUpAmount,
   buildTransactionId,
 } from "@/lib/bonum";
+import { formatMnt } from "@/lib/pricing";
 import { randomUUID } from "crypto";
 
 export async function startTopUpAction(formData: FormData): Promise<void> {
@@ -47,10 +48,11 @@ export async function startTopUpAction(formData: FormData): Promise<void> {
 // transactionId so the webhook can resolve the account.
 export async function startBonumTopUpAction(formData: FormData): Promise<void> {
   const user = await requireUser();
-  const amountMnt = Number(formData.get("amountMnt") ?? 0);
-  const tier = getBonumTiers().find((t) => t.amountMnt === amountMnt);
-  if (!tier) {
-    throw new Error("Багц олдсонгүй.");
+  // Charges are whole ₮1,000 units, minimum ₮1,000. The preset buttons and the
+  // custom input both post a plain ₮ amount here.
+  const amountMnt = Math.floor(Number(formData.get("amountMnt") ?? 0));
+  if (!isValidTopUpAmount(amountMnt)) {
+    redirect("/dashboard/wallet?topup=invalid");
   }
 
   const base =
@@ -58,10 +60,10 @@ export async function startBonumTopUpAction(formData: FormData): Promise<void> {
   const transactionId = buildTransactionId(user.id, randomUUID().slice(0, 8));
 
   const invoice = await createInvoice({
-    amount: tier.amountMnt,
+    amount: amountMnt,
     transactionId,
     callbackUrl: `${base}/api/webhooks/bonum`,
-    description: `Хэтэвч цэнэглэлт — ${tier.label}`,
+    description: `Хэтэвч цэнэглэлт — ${formatMnt(amountMnt)}`,
   });
 
   redirect(invoice.followUpLink);

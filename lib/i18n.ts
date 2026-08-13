@@ -126,8 +126,11 @@ export const t = {
     topupCanceled: "Төлбөр цуцлагдлаа.",
     topupPending:
       "Төлбөрийг хүлээн авч байна. Амжилттай бол хэтэвч хэдхэн секундэд цэнэглэгдэнэ.",
+    topupInvalid: "Дүн буруу байна. Хамгийн бага дүн ₮1,000, 1,000-ын үржвэр байх ёстой.",
     bonumTitle: "Bonum-ээр цэнэглэх",
     bonumHint: "Дүнгээ сонгоод Bonum-ийн төлбөрийн хуудас руу шилжинэ.",
+    bonumCustomLabel: "Өөр дүн (₮1,000-аас, 1,000-ын алхамтай)",
+    bonumCustomPay: "Цэнэглэх",
     bonumUnconfigured:
       "Bonum Gateway тохируулаагүй байна. .env-д BONUM_TERMINAL_ID, BONUM_APP_SECRET, BONUM_CHECKSUM_KEY-г нэмнэ үү.",
   },

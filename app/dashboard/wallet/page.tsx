@@ -53,6 +53,11 @@ export default async function WalletPage({
           {t.wallet.topupPending}
         </div>
       )}
+      {params.topup === "invalid" && (
+        <div className="card border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          {t.wallet.topupInvalid}
+        </div>
+      )}
       {params.promo === "success" && (
         <div className="card border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
           {t.promo.success} <strong>{formatMnt(promoAmt)}</strong>
@@ -118,6 +123,43 @@ export default async function WalletPage({
             </form>
           ))}
         </div>
+
+        <form
+          action={startBonumTopUpAction}
+          className="mt-4 flex flex-col sm:flex-row gap-3"
+        >
+          <div className="flex-1">
+            <label
+              htmlFor="amountMnt"
+              className="block text-xs text-slate-500 mb-1"
+            >
+              {t.wallet.bonumCustomLabel}
+            </label>
+            <div className="relative">
+              <input
+                id="amountMnt"
+                type="number"
+                name="amountMnt"
+                min={1000}
+                step={1000}
+                required
+                disabled={!configured}
+                placeholder="1000"
+                className="w-full rounded-lg border border-slate-200 px-4 py-2.5 pr-8 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                ₮
+              </span>
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={!configured}
+            className="rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-700 disabled:opacity-50 sm:self-end"
+          >
+            {t.wallet.bonumCustomPay}
+          </button>
+        </form>
       </div>
 
       <div className="card p-6">

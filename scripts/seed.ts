@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 // Minimal .env loader so `tsx scripts/seed.ts` works without extra deps.
@@ -38,6 +39,26 @@ const partners: Array<{
   { name: "Tolgoit Copy Center", district: "Сонгинохайрхан дүүрэг", location: "Толгойт, зам дагуу", colorSupported: true, duplexSupported: false },
 ];
 
+// Bootstrap an admin account from env so there's a way to log in and manage
+// merchants/printers. Set ADMIN_EMAIL + ADMIN_PASSWORD in .env before seeding.
+// Re-running promotes an existing user to ADMIN and (optionally) resets the
+// password — it never creates a duplicate.
+async function seedAdmin() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
+  if (!email || !password) {
+    console.log("Skipping admin seed (set ADMIN_EMAIL + ADMIN_PASSWORD to enable).");
+    return;
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.user.upsert({
+    where: { email },
+    update: { role: "ADMIN", passwordHash },
+    create: { email, passwordHash, role: "ADMIN", name: "Admin" },
+  });
+  console.log(`Admin ready: ${email}`);
+}
+
 async function main() {
   for (const p of partners) {
     const existing = await prisma.printer.findFirst({ where: { name: p.name } });
@@ -46,6 +67,8 @@ async function main() {
   }
   const total = await prisma.printer.count();
   console.log(`Seeded. Printers now: ${total}`);
+
+  await seedAdmin();
 }
 
 main()

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { createSession, destroySession } from "@/lib/session";
+import { createSession, destroySession, homeForRole } from "@/lib/session";
 
 const signUpSchema = z.object({
   email: z.string().email(),
@@ -55,7 +55,8 @@ export async function signInAction(_prev: FormResult, formData: FormData): Promi
   if (!ok) return { error: "И-мэйл эсвэл нууц үг буруу байна." };
 
   await createSession(user.id);
-  redirect("/dashboard");
+  // Merchants and admins land on their own dashboards.
+  redirect(homeForRole(user.role));
 }
 
 export async function signOutAction() {

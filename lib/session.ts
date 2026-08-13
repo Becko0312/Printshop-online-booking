@@ -62,3 +62,33 @@ export async function requireUser() {
   if (!user) redirect("/auth/signin");
   return user;
 }
+
+// The landing route for a given role — used to send users to the right
+// dashboard after sign-in and to bounce them out of areas they don't own.
+export function homeForRole(role: string): string {
+  switch (role) {
+    case "ADMIN":
+      return "/admin";
+    case "MERCHANT":
+      return "/merchant";
+    default:
+      return "/dashboard";
+  }
+}
+
+export async function requireMerchant() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/signin");
+  // Admins may also view merchant tooling; customers get sent home.
+  if (user.role !== "MERCHANT" && user.role !== "ADMIN") {
+    redirect(homeForRole(user.role));
+  }
+  return user;
+}
+
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/signin");
+  if (user.role !== "ADMIN") redirect(homeForRole(user.role));
+  return user;
+}

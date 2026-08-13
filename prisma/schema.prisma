@@ -11,20 +11,31 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// Account type. A single users table backs all three roles; the role gates
+// which dashboard and actions are available.
+enum Role {
+  CUSTOMER // prints files, pays from wallet (default)
+  MERCHANT // owns printers, sees their throughput + earnings
+  ADMIN    // manages merchants and printers, sees everything
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
   passwordHash  String
   name          String?
   phone         String?
+  role          Role     @default(CUSTOMER)
   walletCents   Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  jobs          PrintJob[]
-  transactions  WalletTx[]
-  uploads       Upload[]
-  redemptions   PromoRedemption[]
+  jobs           PrintJob[]
+  transactions   WalletTx[]
+  uploads        Upload[]
+  redemptions    PromoRedemption[]
+  // Printers this user owns (only meaningful for MERCHANT accounts).
+  ownedPrinters  Printer[]  @relation("PrinterOwner")
 }
 
 model Printer {
@@ -38,13 +49,20 @@ model Printer {
   colorSupported     Boolean  @default(false)
   duplexSupported    Boolean  @default(false)
   active             Boolean  @default(true)
-  operatorEmail      String?
+  operatorEmail      String?  // legacy free-text contact; superseded by merchant
+  // Owning merchant (nullable: printers can exist unassigned, and legacy rows
+  // predate ownership). onDelete: SetNull so removing a merchant orphans rather
+  // than deletes their printers.
+  merchantId         String?
+  merchant           User?    @relation("PrinterOwner", fields: [merchantId], references: [id], onDelete: SetNull)
   bwCentsPerPage     Int?     // per-printer override
   colorCentsPerPage  Int?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
   jobs               PrintJob[]
+
+  @@index([merchantId])
 }
 
 model Upload {

@@ -32,12 +32,25 @@ npm install
 cp .env.example .env
 # Paste your Neon DATABASE_URL + DATABASE_URL_UNPOOLED into .env
 # Fill AUTH_SECRET, PRINTNODE_API_KEY, POLAR_ACCESS_TOKEN, POLAR_WEBHOOK_SECRET
-npx prisma migrate deploy        # applies the checked-in migration to Neon
-npm run db:seed                  # 12 sample partner shops
+# Optionally set ADMIN_EMAIL + ADMIN_PASSWORD to bootstrap an admin account
+npm run db:push                  # apply schema (adds roles + printer ownership)
+npm run db:seed                  # 12 sample partner shops + admin (if configured)
 npm run dev
 ```
 
 Open http://localhost:3000 — sign up, then visit `/dashboard`.
+
+### Accounts & roles
+
+Every account has a `role`; sign-in (`/auth/signin`) sends each role to its own area:
+
+| Role | Home | Can |
+| --- | --- | --- |
+| **Customer** (default on sign-up) | `/dashboard` | Upload files, pick a printer, pay from wallet |
+| **Merchant** | `/merchant` | Register their own printers, see daily pages printed + money earned |
+| **Admin** | `/admin` | Add/remove merchants, add/remove & assign printers, view every merchant's daily pages + revenue |
+
+Merchants are created by an admin (Admin → Merchants). Bootstrap the first admin by setting `ADMIN_EMAIL` + `ADMIN_PASSWORD` and running `npm run db:seed` (re-running promotes/updates that user — no duplicates).
 
 > Without a `POLAR_ACCESS_TOKEN` the wallet top-up buttons will error on submit. You can still manually credit your account via `npx prisma studio` while testing.
 
@@ -100,8 +113,8 @@ You can switch this off and instead run **pay-per-print** by removing the wallet
 
 ## Data model (Prisma)
 
-- `User` — email + bcrypt password + wallet balance in cents
-- `Printer` — DB record per partner shop; `printNodeId` links to the live PrintNode printer
+- `User` — email + bcrypt password + wallet balance in cents + `role` (`CUSTOMER` / `MERCHANT` / `ADMIN`)
+- `Printer` — DB record per partner shop; `printNodeId` links to the live PrintNode printer; `merchantId` links to the owning merchant (`onDelete: SetNull`)
 - `Upload` — stored under `/uploads/<uuid>-<name>` on disk
 - `PrintJob` — one per submit; tracks status, page count, cost, PrintNode job id
 - `WalletTx` — every credit / debit / refund; single source of truth for balance
@@ -116,11 +129,16 @@ Wallet debits happen atomically with job creation (`prisma.$transaction`). If th
 app/
   page.tsx                    landing (Mongolian marketing page)
   auth/…                      sign in / sign up
-  dashboard/                  main app (server components)
+  dashboard/                  customer app (server components)
     upload/                   file → printer → confirm
     printers/                 browse partner shops
     jobs/                     print history
     wallet/                   balance + top-up
+  merchant/                   merchant app — own printers + daily pages/revenue
+    printers/                 register a printer, see connection status
+  admin/                      admin app
+    merchants/                add / remove merchants
+    printers/                 add / remove / assign printers
   api/
     auth/signout              POST — clear cookie
     admin/sync-printers       POST — pull printer list from PrintNode
@@ -132,6 +150,7 @@ lib/
   polar.ts     REST wrapper + Standard Webhooks verification
   pricing.ts   per-page pricing + wallet math
   pdf.ts       best-effort PDF page counter
+  analytics.ts daily pages + revenue rollups (merchant / admin)
   i18n.ts      Mongolian copy in one place
 prisma/schema.prisma
 scripts/seed.ts               12 sample partner shops
@@ -151,7 +170,7 @@ scripts/seed.ts               12 sample partner shops
 ## Next steps you'll want
 
 - Email + SMS notifications when a job is `printed` (Polar/Stripe-style pattern)
-- Shop-operator dashboard (their own login, mark jobs picked up)
+- Let merchants mark jobs picked up from their `/merchant` dashboard
 - Estimated wait time & printer queue depth from PrintNode `/printjobs?state=…`
 - Real Mongolian address autocomplete for finding the nearest shop
 - Pay-per-print variant of the wallet (create a one-off product per job)

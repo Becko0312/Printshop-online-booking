@@ -92,14 +92,19 @@ async function accessToken(): Promise<string> {
 // Create invoice
 // -----------------------------------------------------------------------------
 export type CreateInvoiceInput = {
-  // Amount in MNT (₮). Bonum expects a numeric amount.
+  // Amount in MNT (₮). Bonum expects a numeric amount. Currency is not sent —
+  // it defaults to MNT server-side.
   amount: number;
   // Our own reference, echoed back on the webhook as body.transactionId.
   transactionId: string;
   // Where Bonum sends the payment result (our webhook endpoint).
   callbackUrl: string;
-  description?: string;
+  // Invoice expiry window, in SECONDS. Bonum's DTO requires this field. If the
+  // customer doesn't pay within the window the invoice lapses. Default 15 min.
+  expiresInSec?: number;
 };
+
+const DEFAULT_INVOICE_TTL_SEC = 900;
 
 export type BonumInvoice = {
   invoiceId: string;
@@ -118,10 +123,9 @@ export async function createInvoice(
     },
     body: JSON.stringify({
       amount: input.amount,
-      currency: "MNT",
-      transactionId: input.transactionId,
       callback: input.callbackUrl,
-      description: input.description,
+      transactionId: input.transactionId,
+      expiresIn: input.expiresInSec ?? DEFAULT_INVOICE_TTL_SEC,
     }),
     cache: "no-store",
   });

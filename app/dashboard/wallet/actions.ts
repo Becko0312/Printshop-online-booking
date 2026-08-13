@@ -10,7 +10,6 @@ import {
   isValidTopUpAmount,
   buildTransactionId,
 } from "@/lib/bonum";
-import { formatMnt } from "@/lib/pricing";
 import { randomUUID } from "crypto";
 
 export async function startTopUpAction(formData: FormData): Promise<void> {
@@ -63,7 +62,6 @@ export async function startBonumTopUpAction(formData: FormData): Promise<void> {
     amount: amountMnt,
     transactionId,
     callbackUrl: `${base}/api/webhooks/bonum`,
-    description: `Хэтэвч цэнэглэлт — ${formatMnt(amountMnt)}`,
   });
 
   redirect(invoice.followUpLink);

@@ -64,11 +64,14 @@ export default async function AdminPrintersPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* Reassign owner — auto-submits on change */}
                     <form action={assignPrinterAction} className="flex items-center gap-2">
                       <input type="hidden" name="id" value={p.id} />
                       <select
                         name="merchantId"
+                        // key changes with the saved owner so React remounts the
+                        // (uncontrolled) select after a save and it reflects the
+                        // new value instead of snapping back to its first render.
+                        key={p.merchantId ?? "none"}
                         defaultValue={p.merchantId ?? ""}
                         className="input py-1.5 text-sm"
                       >

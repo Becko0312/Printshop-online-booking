@@ -72,6 +72,9 @@ const submitSchema = z.object({
   color: z.coerce.boolean().optional(),
   duplex: z.coerce.boolean().optional(),
   pageCount: z.coerce.number().int().min(1).max(5000),
+  // "printnode" → dispatch to the PrintNode cloud; "agent" → leave queued for a
+  // local agent (n8n) on the shop PC to pull.
+  method: z.enum(["printnode", "agent"]).default("printnode"),
 });
 
 export type SubmitResult = { ok: true; jobId: string } | { ok: false; error: string };
@@ -88,6 +91,7 @@ export async function submitPrintJobAction(
     color: formData.get("color") === "on" || formData.get("color") === "true",
     duplex: formData.get("duplex") === "on" || formData.get("duplex") === "true",
     pageCount: formData.get("pageCount"),
+    method: formData.get("method") ?? "printnode",
   });
   if (!parsed.success) return { ok: false, error: "Тохиргоо буруу байна." };
 
@@ -130,6 +134,7 @@ export async function submitPrintJobAction(
         pageCount: parsed.data.pageCount,
         costCents,
         status: "queued",
+        deliveryMethod: parsed.data.method,
       },
     });
     await tx.walletTx.create({
@@ -150,6 +155,15 @@ export async function submitPrintJobAction(
 
   if (job === "INSUFFICIENT_FUNDS") {
     return { ok: false, error: "Үлдэгдэл хүрэлцэхгүй. Хэтэвчээ цэнэглэнэ үү." };
+  }
+
+  // Local-agent delivery: nothing to dispatch here — the job stays "queued"
+  // and the shop-PC agent (n8n) pulls it via /api/agent/jobs, prints, and
+  // reports back. Wallet is already debited; the agent refunds on failure.
+  if (parsed.data.method === "agent") {
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/jobs");
+    return { ok: true, jobId: job.id };
   }
 
   // Dispatch to PrintNode (best-effort — if it fails we mark the job failed

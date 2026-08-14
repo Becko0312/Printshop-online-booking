@@ -93,6 +93,10 @@ model PrintJob {
   pageCount      Int       @default(1)
   costCents      Int       @default(0)
   status         String    @default("queued") // queued | sent | printed | failed | canceled
+  // How the job reaches the printer:
+  //   "printnode" — dispatched to the PrintNode cloud (default, legacy)
+  //   "agent"     — left queued for a local agent (n8n) on the shop PC to pull
+  deliveryMethod String    @default("printnode")
   // PrintNode job ids exceed 32-bit int range — must be BigInt.
   printNodeJobId BigInt?
   errorMessage   String?

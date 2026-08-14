@@ -47,6 +47,12 @@ export default function UploadClient({
 
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [submitting, startSubmit] = useTransition();
+  // After "Хэвлэлт илгээх" we reveal the delivery choice (PrintNode / agent)
+  // instead of dispatching immediately.
+  const [showMethods, setShowMethods] = useState(false);
+  const [lastMethod, setLastMethod] = useState<"printnode" | "agent" | null>(
+    null,
+  );
 
   const selectedPrinter = useMemo(
     () => printers.find((p) => p.id === printerId) ?? null,
@@ -79,8 +85,7 @@ export default function UploadClient({
     });
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function submit(method: "printnode" | "agent") {
     if (!uploaded) return;
     const fd = new FormData();
     fd.append("uploadId", uploaded.uploadId);
@@ -89,9 +94,12 @@ export default function UploadClient({
     fd.append("color", color ? "true" : "false");
     fd.append("duplex", duplex ? "true" : "false");
     fd.append("pageCount", String(pageCount));
+    fd.append("method", method);
+    setLastMethod(method);
     startSubmit(async () => {
       const res = await submitPrintJobAction(undefined, fd);
       setSubmitResult(res);
+      if (res.ok) setShowMethods(false);
     });
   }
 
@@ -139,7 +147,10 @@ export default function UploadClient({
 
       {/* Step 2 + 3: printer + options */}
       {uploaded && (
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
+        <form
+          onSubmit={(e) => e.preventDefault()}
+          className="grid md:grid-cols-2 gap-6"
+        >
           <section className="card p-6">
             <h2 className="font-semibold mb-3">{t.upload.step2}</h2>
             {printers.length === 0 ? (
@@ -272,25 +283,73 @@ export default function UploadClient({
             )}
 
             {submitResult && submitResult.ok && (
-              <p className="text-sm text-emerald-700">{t.upload.jobSent}</p>
+              <p className="text-sm text-emerald-700">
+                {lastMethod === "agent" ? t.upload.jobQueuedAgent : t.upload.jobSent}
+              </p>
             )}
             {submitResult && !submitResult.ok && (
               <p className="text-sm text-red-600">{submitResult.error}</p>
             )}
 
-            <button
-              type="submit"
-              className="btn-primary w-full"
-              disabled={
-                submitting ||
-                !printerId ||
-                !canAfford ||
-                pageCount < 1 ||
-                copies < 1
-              }
-            >
-              {submitting ? t.common.loading : t.upload.sendPrint}
-            </button>
+            {!showMethods ? (
+              <button
+                type="button"
+                className="btn-primary w-full"
+                disabled={
+                  submitting ||
+                  !printerId ||
+                  !canAfford ||
+                  pageCount < 1 ||
+                  copies < 1
+                }
+                onClick={() => {
+                  setSubmitResult(null);
+                  setShowMethods(true);
+                }}
+              >
+                {t.upload.sendPrint}
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-slate-700">
+                  {t.upload.chooseMethod}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => submit("printnode")}
+                    disabled={submitting || !selectedPrinter?.connected}
+                    className="rounded-lg border border-slate-200 p-4 text-center hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50"
+                  >
+                    <div className="font-semibold">{t.upload.methodPrintNode}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {selectedPrinter && !selectedPrinter.connected
+                        ? t.upload.printNodeNotConnected
+                        : t.upload.methodPrintNodeHint}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submit("agent")}
+                    disabled={submitting}
+                    className="rounded-lg border border-slate-200 p-4 text-center hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50"
+                  >
+                    <div className="font-semibold">{t.upload.methodAgent}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {t.upload.methodAgentHint}
+                    </div>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMethods(false)}
+                  disabled={submitting}
+                  className="text-xs text-slate-500 underline"
+                >
+                  {t.upload.methodBack}
+                </button>
+              </div>
+            )}
           </section>
         </form>
       )}

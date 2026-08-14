@@ -15,6 +15,8 @@ export const t = {
     cancel: "Цуцлах",
     save: "Хадгалах",
     back: "Буцах",
+    copy: "Хуулах",
+    copied: "Хуулсан!",
     continue: "Үргэлжлүүлэх",
     price: "Үнэ",
     total: "Нийт",

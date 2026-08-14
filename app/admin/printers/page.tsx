@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import { assignPrinterAction, removePrinterAction } from "../actions";
 import AddPrinterForm from "./AddPrinterForm";
+import CopyId from "./CopyId";
 
 function merchantLabel(m: { name: string | null; email: string }): string {
   return m.name ? `${m.name} (${m.email})` : m.email;
@@ -61,6 +62,7 @@ export default async function AdminPrintersPage() {
                     <div className="text-xs text-slate-500">
                       {p.district} · {p.location}
                     </div>
+                    <CopyId id={p.id} copy={t.common.copy} copied={t.common.copied} />
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">

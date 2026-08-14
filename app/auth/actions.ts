@@ -10,6 +10,9 @@ const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().max(120).optional(),
+  // Self-service signup only allows CUSTOMER or MERCHANT. ADMIN is assigned
+  // out-of-band and must never be selectable from the public form.
+  role: z.enum(["CUSTOMER", "MERCHANT"]).default("CUSTOMER"),
 });
 
 const signInSchema = z.object({
@@ -24,6 +27,7 @@ export async function signUpAction(_prev: FormResult, formData: FormData): Promi
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     password: String(formData.get("password") ?? ""),
     name: String(formData.get("name") ?? "").trim() || undefined,
+    role: String(formData.get("role") ?? "CUSTOMER"),
   });
   if (!parsed.success) return { error: "И-мэйл эсвэл нууц үг буруу." };
 
@@ -36,10 +40,12 @@ export async function signUpAction(_prev: FormResult, formData: FormData): Promi
       email: parsed.data.email,
       passwordHash,
       name: parsed.data.name,
+      role: parsed.data.role,
     },
   });
   await createSession(user.id);
-  redirect("/dashboard");
+  // Merchants land on their own dashboard; customers on the print dashboard.
+  redirect(homeForRole(user.role));
 }
 
 export async function signInAction(_prev: FormResult, formData: FormData): Promise<FormResult> {

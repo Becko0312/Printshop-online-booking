@@ -22,6 +22,41 @@ export default function SignUpPage() {
         </h1>
 
         <form action={formAction} className="mt-6 space-y-4">
+          <fieldset>
+            <legend className="label">{t.auth.roleLabel}</legend>
+            <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="relative flex cursor-pointer flex-col rounded-lg border border-slate-200 p-3 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-brand-600">
+                <input
+                  type="radio"
+                  name="role"
+                  value="CUSTOMER"
+                  defaultChecked
+                  className="peer sr-only"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  {t.auth.roleCustomer}
+                </span>
+                <span className="mt-0.5 text-xs text-slate-500">
+                  {t.auth.roleCustomerHint}
+                </span>
+              </label>
+              <label className="relative flex cursor-pointer flex-col rounded-lg border border-slate-200 p-3 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-brand-600">
+                <input
+                  type="radio"
+                  name="role"
+                  value="MERCHANT"
+                  className="peer sr-only"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  {t.auth.roleMerchant}
+                </span>
+                <span className="mt-0.5 text-xs text-slate-500">
+                  {t.auth.roleMerchantHint}
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
           <div>
             <label className="label" htmlFor="name">
               {t.common.name}

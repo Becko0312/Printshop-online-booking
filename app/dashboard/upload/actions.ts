@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { countPdfPages } from "@/lib/pdf";
 import { estimateCostCents, perPageCents } from "@/lib/pricing";
 import { createPrintJob } from "@/lib/printnode";
 import { saveUpload, contentForPrintNode } from "@/lib/storage";
+import { normalizeUpload, UnsupportedFormatError } from "@/lib/normalize";
 
 const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
 
@@ -33,13 +33,29 @@ export async function uploadFileAction(formData: FormData): Promise<UploadResult
     return { ok: false, error: `Дэмжигдэхгүй файлын төрөл: ${file.type || "тодорхойгүй"}` };
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const pageCount =
-    file.type === "application/pdf" ? countPdfPages(buf) : null;
+  const original = Buffer.from(await file.arrayBuffer());
+
+  // Normalize to PDF at the source: images and DOCX become PDF so every
+  // downstream path (PrintNode + local agent, on any OS) prints one reliable
+  // format. See lib/normalize.ts.
+  let norm;
+  try {
+    norm = await normalizeUpload(original, file.name, file.type);
+  } catch (e) {
+    if (e instanceof UnsupportedFormatError) {
+      return {
+        ok: false,
+        error:
+          "Word (.docx) файлыг шууд хэвлэх боломжгүй байна. PDF болгож хөрвүүлээд оруулна уу.",
+      };
+    }
+    const msg = e instanceof Error ? e.message : "Файл боловсруулахад алдаа гарлаа.";
+    return { ok: false, error: `Хөрвүүлэлт амжилтгүй: ${msg}` };
+  }
 
   let stored;
   try {
-    stored = await saveUpload(buf, file.name, file.type);
+    stored = await saveUpload(norm.buf, norm.filename, norm.mimeType);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Файл хадгалахад алдаа гарлаа.";
     return { ok: false, error: msg };
@@ -48,18 +64,18 @@ export async function uploadFileAction(formData: FormData): Promise<UploadResult
   const upload = await prisma.upload.create({
     data: {
       userId: user.id,
-      filename: file.name,
+      filename: norm.filename,
       storedPath: stored.storedPath,
-      mimeType: file.type,
-      sizeBytes: file.size,
-      pageCount: pageCount ?? undefined,
+      mimeType: norm.mimeType,
+      sizeBytes: norm.buf.length,
+      pageCount: norm.pageCount ?? undefined,
     },
   });
 
   return {
     ok: true,
     uploadId: upload.id,
-    pageCount,
+    pageCount: norm.pageCount,
     filename: upload.filename,
     mimeType: upload.mimeType,
   };

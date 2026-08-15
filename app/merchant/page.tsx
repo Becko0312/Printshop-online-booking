@@ -29,6 +29,20 @@ export default async function MerchantHome() {
         <p className="text-slate-500 text-sm mt-1">{t.merchant.subtitle}</p>
       </div>
 
+      <div className="card border-brand-200 bg-brand-50/60 p-4">
+        <div className="flex items-start gap-3">
+          <span className="chip bg-brand-600 text-white shrink-0">10%</span>
+          <div>
+            <div className="font-medium text-slate-800">
+              {t.merchant.serviceFee}
+            </div>
+            <div className="text-sm text-slate-600 mt-0.5">
+              {t.merchant.serviceFeeHint}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid md:grid-cols-4 gap-4">
         <StatCard label={t.merchant.todayPages} value={today.pages} />
         <StatCard

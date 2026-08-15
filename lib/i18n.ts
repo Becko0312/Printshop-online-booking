@@ -1,7 +1,7 @@
 // Mongolian (Cyrillic) copy used throughout the UI.
 // Keeping strings in one place makes it easy to add English later.
 export const t = {
-  brand: "Хэвлэх Үүл",
+  brand: "Үүлэн Хэвлэл",
   tagline: "Улаанбаатар даяарх 100+ хэвлэгчид үүлнээс шууд илгээ",
   common: {
     signIn: "Нэвтрэх",
@@ -41,7 +41,7 @@ export const t = {
     hero1: "Файлаа байршуулаад",
     hero2: "хамгийн ойрын хэвлэгчээс ав.",
     heroSub:
-      "PrintNode ашиглан бид Улаанбаатар хотын 6 дүүрэгт 100 гаруй хэвлэгч холбож байна. Компьютераасаа файлаа сонго — хэдхэн секундэд хэвлэгдэнэ.",
+      "Улаанбаатар хотын 6 дүүрэгт манай платформд нэгдэх мерчант хайж байна. Холболт тохиргоо үнэгүй.",
     ctaPrimary: "Үнэгүй эхлэх",
     ctaSecondary: "Хэрхэн ажилладаг вэ?",
     step1Title: "Байршуулах",

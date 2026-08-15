@@ -73,9 +73,9 @@ export default async function PrintersPage() {
                   </div>
                   <div className="mt-3 text-xs text-slate-500">
                     Хар/цагаан:{" "}
-                    {formatMnt(p.bwCentsPerPage ?? Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10))}{" "}
+                    {formatMnt(p.bwCentsPerPage ?? Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 400))}{" "}
                     · Өнгөт:{" "}
-                    {formatMnt(p.colorCentsPerPage ?? Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30))}
+                    {formatMnt(p.colorCentsPerPage ?? Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 800))}
                   </div>
                 </li>
               ))}

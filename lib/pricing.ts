@@ -1,7 +1,7 @@
 import type { Printer } from "@prisma/client";
 
-const DEFAULT_BW = Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10);
-const DEFAULT_COLOR = Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30);
+const DEFAULT_BW = Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 400);
+const DEFAULT_COLOR = Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 800);
 
 export type PriceInput = {
   pageCount: number;

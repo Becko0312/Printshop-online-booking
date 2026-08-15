@@ -23,8 +23,8 @@ type Printer = {
   connected: boolean;
 };
 
-const DEFAULT_BW = 10;
-const DEFAULT_COLOR = 30;
+const DEFAULT_BW = 400;
+const DEFAULT_COLOR = 800;
 
 export default function UploadClient({
   walletCents,

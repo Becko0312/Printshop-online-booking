@@ -3,8 +3,8 @@ import Nav from "@/components/Nav";
 import { t } from "@/lib/i18n";
 import { formatMnt } from "@/lib/pricing";
 
-const bw = Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 10);
-const color = Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 30);
+const bw = Number(process.env.PRICE_BW_CENTS_PER_PAGE ?? 400);
+const color = Number(process.env.PRICE_COLOR_CENTS_PER_PAGE ?? 800);
 
 export default function LandingPage() {
   return (
@@ -14,10 +14,7 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="max-w-6xl mx-auto px-4 pt-16 pb-20 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <span className="chip bg-brand-50 text-brand-700">
-              PrintNode × Polar × Улаанбаатар
-            </span>
-            <h1 className="mt-4 text-4xl md:text-5xl font-bold leading-tight text-slate-900">
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight text-slate-900">
               {t.landing.hero1} <br />
               <span className="text-brand-600">{t.landing.hero2}</span>
             </h1>

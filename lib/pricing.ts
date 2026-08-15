@@ -15,6 +15,20 @@ export function perPageCents(color: boolean, printer?: PriceInput["printer"]) {
   return printer?.bwCentsPerPage ?? DEFAULT_BW;
 }
 
+// Platform (Cloud Print SaaS) service fee taken from each print's revenue.
+// The merchant keeps the rest. Surfaced on the merchant dashboard.
+export const PLATFORM_FEE_RATE = 0.1; // 10%
+
+// What the merchant actually earns from a given gross revenue (after the fee).
+export function merchantNetCents(grossCents: number): number {
+  return Math.round(grossCents * (1 - PLATFORM_FEE_RATE));
+}
+
+// The platform's cut of a given gross revenue.
+export function platformFeeCents(grossCents: number): number {
+  return grossCents - merchantNetCents(grossCents);
+}
+
 export function estimateCostCents(input: PriceInput): number {
   const per = perPageCents(input.color, input.printer);
   const pages = Math.max(1, Math.floor(input.pageCount)) * Math.max(1, Math.floor(input.copies));

@@ -10,6 +10,9 @@ const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   name: z.string().max(120).optional(),
+  // Self-service registration allows CUSTOMER or MERCHANT. ADMIN is never
+  // grantable through signup.
+  role: z.enum(["CUSTOMER", "MERCHANT"]).default("CUSTOMER"),
 });
 
 const signInSchema = z.object({
@@ -20,10 +23,12 @@ const signInSchema = z.object({
 export type FormResult = { error?: string } | undefined;
 
 export async function signUpAction(_prev: FormResult, formData: FormData): Promise<FormResult> {
+  const roleInput = String(formData.get("role") ?? "CUSTOMER").toUpperCase();
   const parsed = signUpSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     password: String(formData.get("password") ?? ""),
     name: String(formData.get("name") ?? "").trim() || undefined,
+    role: roleInput === "MERCHANT" ? "MERCHANT" : "CUSTOMER",
   });
   if (!parsed.success) return { error: "И-мэйл эсвэл нууц үг буруу." };
 
@@ -36,10 +41,12 @@ export async function signUpAction(_prev: FormResult, formData: FormData): Promi
       email: parsed.data.email,
       passwordHash,
       name: parsed.data.name,
+      role: parsed.data.role,
     },
   });
   await createSession(user.id);
-  redirect("/dashboard");
+  // Merchants land on their own dashboard, customers on the print dashboard.
+  redirect(homeForRole(user.role));
 }
 
 export async function signInAction(_prev: FormResult, formData: FormData): Promise<FormResult> {

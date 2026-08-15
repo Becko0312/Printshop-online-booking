@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { t } from "@/lib/i18n";
+import { cn } from "@/lib/ui";
 import { signUpAction, type FormResult } from "@/app/auth/actions";
 
 export default function SignUpPage() {
@@ -10,6 +11,7 @@ export default function SignUpPage() {
     signUpAction,
     undefined,
   );
+  const [role, setRole] = useState<"CUSTOMER" | "MERCHANT">("CUSTOMER");
 
   return (
     <main className="min-h-screen grid place-items-center px-4 bg-slate-50">
@@ -22,6 +24,34 @@ export default function SignUpPage() {
         </h1>
 
         <form action={formAction} className="mt-6 space-y-4">
+          <input type="hidden" name="role" value={role} />
+          <div>
+            <div className="label">{t.auth.chooseRole}</div>
+            <div className="grid grid-cols-2 gap-3">
+              {(
+                [
+                  ["CUSTOMER", t.auth.roleCustomer, t.auth.roleCustomerHint],
+                  ["MERCHANT", t.auth.roleMerchant, t.auth.roleMerchantHint],
+                ] as const
+              ).map(([value, title, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRole(value)}
+                  aria-pressed={role === value}
+                  className={cn(
+                    "rounded-lg border p-3 text-left transition",
+                    role === value
+                      ? "border-brand-500 bg-brand-50/60 ring-1 ring-brand-500"
+                      : "border-slate-200 hover:border-slate-300",
+                  )}
+                >
+                  <div className="font-medium text-slate-800">{title}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{hint}</div>
+                </button>
+              ))}
+            </div>
+          </div>
           <div>
             <label className="label" htmlFor="name">
               {t.common.name}

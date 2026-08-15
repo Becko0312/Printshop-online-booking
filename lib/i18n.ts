@@ -65,6 +65,11 @@ export const t = {
     haveAccount: "Аль хэдийн бүртгүүлсэн үү?",
     invalidCreds: "И-мэйл эсвэл нууц үг буруу байна.",
     emailTaken: "Энэ и-мэйл аль хэдийн бүртгэлтэй байна.",
+    chooseRole: "Та юугаар бүртгүүлэх вэ?",
+    roleCustomer: "Хэрэглэгч",
+    roleCustomerHint: "Баримтаа хэвлүүлнэ",
+    roleMerchant: "Мерчант",
+    roleMerchantHint: "Хэвлэгчээ холбож орлого олно",
   },
   dashboard: {
     title: "Хяналтын самбар",
@@ -150,6 +155,12 @@ export const t = {
     serviceFee: "Cloud Print SaaS үйлчилгээний хураамж: 10%",
     serviceFeeHint:
       "Хэвлэлт бүрийн орлогоос 10% үйлчилгээний хураамж суутгагдана. Үлдэх дүн танд ногдоно.",
+    todayNetRevenue: "Өнөөдрийн цэвэр орлого",
+    windowNetRevenue: "Цэвэр орлого (14 хоног)",
+    earningsTitle: "Орлогын задаргаа (14 хоног)",
+    grossSales: "Нийт борлуулалт",
+    serviceFeeDeduct: "Үйлчилгээний хураамж (10%)",
+    netEarnings: "Таны цэвэр орлого",
     nav: {
       overview: "Ерөнхий",
       printers: "Миний хэвлэгчид",

@@ -6,7 +6,12 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { estimateCostCents, perPageCents } from "@/lib/pricing";
 import { createPrintJob } from "@/lib/printnode";
-import { saveUpload, contentForPrintNode } from "@/lib/storage";
+import { sendDocument as sendTelegramDocument } from "@/lib/telegram";
+import {
+  saveUpload,
+  contentForPrintNode,
+  readUploadBytes,
+} from "@/lib/storage";
 import { normalizeUpload, UnsupportedFormatError } from "@/lib/normalize";
 
 const MAX_BYTES = 100 * 1024 * 1024; // 100 MB
@@ -88,9 +93,11 @@ const submitSchema = z.object({
   color: z.coerce.boolean().optional(),
   duplex: z.coerce.boolean().optional(),
   pageCount: z.coerce.number().int().min(1).max(5000),
-  // "printnode" → dispatch to the PrintNode cloud; "agent" → leave queued for a
-  // local agent (n8n) on the shop PC to pull.
-  method: z.enum(["printnode", "agent"]).default("printnode"),
+  // "printnode" → dispatch to the PrintNode cloud;
+  // "agent"     → leave queued for a local agent (n8n) on the shop PC to pull;
+  // "telegram"  → post the file to the printer's Telegram bot for a merchant-
+  //               side n8n workflow to print.
+  method: z.enum(["printnode", "agent", "telegram"]).default("printnode"),
 });
 
 export type SubmitResult = { ok: true; jobId: string } | { ok: false; error: string };
@@ -177,6 +184,61 @@ export async function submitPrintJobAction(
   // and the shop-PC agent (n8n) pulls it via /api/agent/jobs, prints, and
   // reports back. Wallet is already debited; the agent refunds on failure.
   if (parsed.data.method === "agent") {
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/jobs");
+    return { ok: true, jobId: job.id };
+  }
+
+  // Telegram delivery: post the file to the merchant's bot. The shop-side n8n
+  // workflow watches that chat and prints. Refund on dispatch failure since
+  // the job never reached the shop.
+  if (parsed.data.method === "telegram") {
+    try {
+      if (!printer.telegramBotToken || !printer.telegramChatId) {
+        throw new Error("Хэвлэгч Telegram-д тохируулагдаагүй.");
+      }
+      const bytes = await readUploadBytes(upload.storedPath);
+      await sendTelegramDocument({
+        botToken: printer.telegramBotToken,
+        chatId: printer.telegramChatId,
+        filename: upload.filename,
+        mimeType: upload.mimeType,
+        bytes,
+        // Machine-readable caption so the n8n workflow can pick out print
+        // options without needing a separate API call back to us.
+        caption: [
+          `job:${job.id}`,
+          `copies:${parsed.data.copies}`,
+          `color:${parsed.data.color ? 1 : 0}`,
+          `duplex:${parsed.data.duplex ? 1 : 0}`,
+        ].join(" "),
+      });
+      await prisma.printJob.update({
+        where: { id: job.id },
+        data: { status: "sent" },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Тодорхойгүй алдаа";
+      await prisma.$transaction([
+        prisma.printJob.update({
+          where: { id: job.id },
+          data: { status: "failed", errorMessage: message },
+        }),
+        prisma.user.update({
+          where: { id: user.id },
+          data: { walletCents: { increment: costCents } },
+        }),
+        prisma.walletTx.create({
+          data: {
+            userId: user.id,
+            amountCents: costCents,
+            kind: "refund",
+            description: `Буцаалт: ${upload.filename}`,
+          },
+        }),
+      ]);
+      return { ok: false, error: `Telegram алдаа: ${message}` };
+    }
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/jobs");
     return { ok: true, jobId: job.id };

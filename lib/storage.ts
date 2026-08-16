@@ -71,6 +71,20 @@ export async function saveUpload(
 }
 
 /**
+ * Read the stored upload as a Buffer, regardless of whether it lives on disk
+ * or in Vercel Blob. Callers that need the raw bytes (e.g. Telegram
+ * sendDocument) use this instead of the PrintNode-shaped helper below.
+ */
+export async function readUploadBytes(storedPath: string): Promise<Buffer> {
+  if (/^https?:\/\//.test(storedPath)) {
+    const res = await fetch(storedPath, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Blob fetch ${res.status}: ${res.statusText}`);
+    return Buffer.from(await res.arrayBuffer());
+  }
+  return fs.readFile(path.join(UPLOAD_DIR, storedPath));
+}
+
+/**
  * Return the content PrintNode should ingest. If we have a URL we pass it
  * through as `*_uri` (PrintNode fetches it directly, much faster than
  * base64). Otherwise we base64-encode the local file.

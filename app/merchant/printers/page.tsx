@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireMerchant } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import AddPrinterForm from "./AddPrinterForm";
+import EditPrinterCard from "./EditPrinterCard";
 
 export default async function MerchantPrintersPage() {
   const user = await requireMerchant();
@@ -22,41 +23,24 @@ export default async function MerchantPrintersPage() {
         </div>
       ) : (
         <ul className="grid md:grid-cols-2 gap-3">
-          {printers.map((p) => {
-            const online = p.active && p.printNodeId != null;
-            return (
-              <li key={p.id} className="card p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-medium text-slate-800">{p.name}</div>
-                    <div className="text-xs text-slate-500">
-                      {p.district} · {p.location}
-                    </div>
-                  </div>
-                  <span
-                    className={
-                      "chip " +
-                      (online
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-500")
-                    }
-                  >
-                    {online ? t.printers.online : t.merchant.pendingConnect}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  <span className="chip bg-slate-100 text-slate-600">
-                    {p.colorSupported ? t.printers.supportsColor : t.printers.supportsBw}
-                  </span>
-                  {p.duplexSupported && (
-                    <span className="chip bg-slate-100 text-slate-600">
-                      {t.common.duplex}
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {printers.map((p) => (
+            <EditPrinterCard
+              key={p.id}
+              printer={{
+                id: p.id,
+                name: p.name,
+                district: p.district,
+                location: p.location,
+                address: p.address,
+                colorSupported: p.colorSupported,
+                duplexSupported: p.duplexSupported,
+                active: p.active,
+                printNodeId: p.printNodeId,
+                telegramBotToken: p.telegramBotToken,
+                telegramChatId: p.telegramChatId,
+              }}
+            />
+          ))}
         </ul>
       )}
 

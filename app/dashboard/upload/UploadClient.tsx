@@ -21,7 +21,10 @@ type Printer = {
   bwCentsPerPage: number | null;
   colorCentsPerPage: number | null;
   connected: boolean;
+  telegramReady: boolean;
 };
+
+type Method = "printnode" | "agent" | "telegram";
 
 const DEFAULT_BW = 400;
 const DEFAULT_COLOR = 800;
@@ -50,9 +53,7 @@ export default function UploadClient({
   // After "Хэвлэлт илгээх" we reveal the delivery choice (PrintNode / agent)
   // instead of dispatching immediately.
   const [showMethods, setShowMethods] = useState(false);
-  const [lastMethod, setLastMethod] = useState<"printnode" | "agent" | null>(
-    null,
-  );
+  const [lastMethod, setLastMethod] = useState<Method | null>(null);
 
   const selectedPrinter = useMemo(
     () => printers.find((p) => p.id === printerId) ?? null,
@@ -85,7 +86,7 @@ export default function UploadClient({
     });
   }
 
-  function submit(method: "printnode" | "agent") {
+  function submit(method: Method) {
     if (!uploaded) return;
     const fd = new FormData();
     fd.append("uploadId", uploaded.uploadId);
@@ -284,7 +285,11 @@ export default function UploadClient({
 
             {submitResult && submitResult.ok && (
               <p className="text-sm text-emerald-700">
-                {lastMethod === "agent" ? t.upload.jobQueuedAgent : t.upload.jobSent}
+                {lastMethod === "agent"
+                  ? t.upload.jobQueuedAgent
+                  : lastMethod === "telegram"
+                  ? t.upload.jobSentTelegram
+                  : t.upload.jobSent}
               </p>
             )}
             {submitResult && !submitResult.ok && (
@@ -314,7 +319,7 @@ export default function UploadClient({
                 <div className="text-sm font-medium text-slate-700">
                   {t.upload.chooseMethod}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
                     type="button"
                     onClick={() => submit("printnode")}
@@ -337,6 +342,19 @@ export default function UploadClient({
                     <div className="font-semibold">{t.upload.methodAgent}</div>
                     <div className="text-xs text-slate-500 mt-1">
                       {t.upload.methodAgentHint}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => submit("telegram")}
+                    disabled={submitting || !selectedPrinter?.telegramReady}
+                    className="rounded-lg border border-slate-200 p-4 text-center hover:border-brand-500 hover:bg-brand-50/40 disabled:opacity-50"
+                  >
+                    <div className="font-semibold">{t.upload.methodTelegram}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      {selectedPrinter && !selectedPrinter.telegramReady
+                        ? t.upload.telegramNotConfigured
+                        : t.upload.methodTelegramHint}
                     </div>
                   </button>
                 </div>

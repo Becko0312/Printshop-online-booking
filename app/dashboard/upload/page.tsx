@@ -21,6 +21,7 @@ export default async function UploadPage() {
         bwCentsPerPage: p.bwCentsPerPage,
         colorCentsPerPage: p.colorCentsPerPage,
         connected: p.printNodeId != null,
+        telegramReady: !!(p.telegramBotToken && p.telegramChatId),
       }))}
     />
   );

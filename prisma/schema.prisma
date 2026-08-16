@@ -57,6 +57,12 @@ model Printer {
   merchant           User?    @relation("PrinterOwner", fields: [merchantId], references: [id], onDelete: SetNull)
   bwCentsPerPage     Int?     // per-printer override
   colorCentsPerPage  Int?
+  // Telegram / n8n delivery. When both are set, this printer can accept jobs
+  // via the "telegram" deliveryMethod: the app posts the file to Telegram's
+  // sendDocument for (botToken, chatId), and a merchant-side n8n workflow on
+  // the shop PC picks it up from the chat and prints locally.
+  telegramBotToken   String?
+  telegramChatId     String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -96,6 +102,8 @@ model PrintJob {
   // How the job reaches the printer:
   //   "printnode" — dispatched to the PrintNode cloud (default, legacy)
   //   "agent"     — left queued for a local agent (n8n) on the shop PC to pull
+  //   "telegram"  — sent to the merchant's Telegram bot via sendDocument; the
+  //                 shop-PC n8n workflow reads the chat and prints locally
   deliveryMethod String    @default("printnode")
   // PrintNode job ids exceed 32-bit int range — must be BigInt.
   printNodeJobId BigInt?

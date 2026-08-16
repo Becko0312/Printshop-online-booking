@@ -1,0 +1,135 @@
+{
+  "name": "Uulen — Telegram → Local print",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CREDENTIAL_ID",
+          "name": "Uulen bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "has-document",
+              "leftValue": "={{$json.message.document}}",
+              "rightValue": "",
+              "operator": { "type": "object", "operation": "exists" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "hasdoc",
+      "name": "Has document?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [420, 200]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{$json.message.document.file_id}}"
+      },
+      "id": "getfile",
+      "name": "Telegram: Get File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [640, 140],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CREDENTIAL_ID",
+          "name": "Uulen bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $env.PRINT_TMP_DIR || 'C:\\\\Users\\\\Public\\\\uulen-print' }}\\\\{{$json.message.document.file_name || ($json.message.document.file_id + '.pdf')}}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "writefile",
+      "name": "Write to disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [860, 140]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the machine-readable caption the Uulen web app sends:\n//   \"job:<id> copies:<n> color:<0|1> duplex:<0|1>\"\nconst caption = ($json.message && $json.message.caption) || '';\nconst m = Object.fromEntries(caption.split(/\\s+/).map((kv) => kv.split(':')).filter((p) => p.length === 2));\nreturn [{\n  json: {\n    jobId: m.job || null,\n    copies: Number(m.copies || 1),\n    color: m.color === '1',\n    duplex: m.duplex === '1',\n    filePath: $json.fileName || $node[\"Write to disk\"].json.fileName,\n  }\n}];"
+      },
+      "id": "parse",
+      "name": "Parse caption",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 140]
+    },
+    {
+      "parameters": {
+        "command": "=\"{{$env.SUMATRA_PATH || 'C:\\\\Program Files\\\\SumatraPDF\\\\SumatraPDF.exe'}}\" -print-to \"{{$env.OS_PRINTER}}\" -print-settings \"{{$json.copies}}x,{{$json.color ? 'color' : 'monochrome'}}{{$json.duplex ? ',duplexlong' : ''}}\" -silent \"{{$json.filePath}}\""
+      },
+      "id": "print",
+      "name": "Print (SumatraPDF)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [1300, 140]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$node[\"Telegram Trigger\"].json.message.chat.id}}",
+        "text": "=✅ printed job {{$node[\"Parse caption\"].json.jobId}}",
+        "additionalFields": {
+          "reply_to_message_id": "={{$node[\"Telegram Trigger\"].json.message.message_id}}"
+        }
+      },
+      "id": "ack",
+      "name": "Ack in chat",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1520, 140],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CREDENTIAL_ID",
+          "name": "Uulen bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Has document?", "type": "main", "index": 0 }]]
+    },
+    "Has document?": {
+      "main": [[{ "node": "Telegram: Get File", "type": "main", "index": 0 }], []]
+    },
+    "Telegram: Get File": {
+      "main": [[{ "node": "Write to disk", "type": "main", "index": 0 }]]
+    },
+    "Write to disk": {
+      "main": [[{ "node": "Parse caption", "type": "main", "index": 0 }]]
+    },
+    "Parse caption": {
+      "main": [[{ "node": "Print (SumatraPDF)", "type": "main", "index": 0 }]]
+    },
+    "Print (SumatraPDF)": {
+      "main": [[{ "node": "Ack in chat", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "note": "Import into n8n → set the Telegram credential to the merchant's bot → set env OS_PRINTER (Windows printer name) and SUMATRA_PATH." }
+}

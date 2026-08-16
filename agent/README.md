@@ -101,3 +101,56 @@ All three endpoints require `Authorization: Bearer <AGENT_TOKEN>`.
 > **Security note (MVP):** one shared `PRINT_AGENT_TOKEN` grants access to any
 > printer's jobs. For a multi-merchant rollout, move to a per-printer token so a
 > shop PC can only fetch its own jobs.
+
+---
+
+# Alternative: Telegram → n8n → local print
+
+Same idea as the poll-based agent above, but delivery goes through a Telegram
+bot the merchant owns. No inbound port, no polling of the cloud — n8n receives
+the file from Telegram's servers, prints it, and replies to the chat.
+
+## One-time merchant setup
+
+1. **Create a bot** — chat with [@BotFather](https://t.me/BotFather) → `/newbot`
+   → follow prompts → copy the **bot token** (looks like `123456789:AAE…`).
+2. **Get a chat id** — start a private chat with your new bot and send it any
+   message. Then open in a browser (replace `<TOKEN>`):
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` — copy the `chat.id`
+   from the JSON. For a group instead, add the bot to the group and read the
+   negative `chat.id` from the same endpoint.
+3. **Save both in the app** — sign in as the merchant → **Миний хэвлэгчид** →
+   **Засах** on the printer → paste **Bot token** and **Chat ID** →
+   **Хадгалах**. The card should now show `Telegram холбогдсон` (green).
+4. **Import the n8n workflow** on the shop PC:
+   - Install n8n (`npm i -g n8n` and `n8n start`, or Docker — either works).
+   - In n8n → **Credentials** → **New** → **Telegram API** → paste the same bot
+     token → save. Note the credential id (URL shows it after save).
+   - Open [`agent/n8n-telegram-print.json`](./n8n-telegram-print.json),
+     replace every `REPLACE_WITH_TELEGRAM_CREDENTIAL_ID` with that id, then
+     **Import from File** in n8n.
+   - Set two env vars for n8n (or hard-code them into the workflow nodes):
+     - `OS_PRINTER` — Windows printer name, e.g. `HP LaserJet 1020`
+     - `SUMATRA_PATH` — path to `SumatraPDF.exe` (only on Windows)
+   - **Activate** the workflow.
+
+## How it works
+
+- Customer picks **Telegram / n8n** on the upload page → the app posts the file
+  to the merchant's bot with a caption like
+  `job:cmxxx copies:2 color:0 duplex:1` (this is how n8n reads the options).
+- n8n's Telegram Trigger fires on the new message → writes the file to a temp
+  path → runs SumatraPDF (Windows) or `lp` (Linux/macOS) with the parsed
+  options → replies in the chat with `✅ printed job cmxxx`.
+- Wallet is already debited when the app dispatches. Dispatch failure (bad
+  token, chat blocked, Telegram down) refunds automatically. Print failures on
+  the shop side are visible in the Telegram chat and in n8n's execution log —
+  they don't refund automatically today (the file did reach the merchant).
+
+## Why choose this path
+
+- No inbound port, no PrintNode subscription, no shared secret across
+  merchants — Telegram's servers handle transport and each merchant owns their
+  bot.
+- Trivial audit trail: the bot chat is a chronological log of every print.
+

@@ -1,0 +1,93 @@
+{
+  "name": "Uulen — Web app → Local print",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uulen-print",
+        "options": {}
+      },
+      "id": "webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.fileUrl }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download",
+      "name": "Download file",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=C:/uulen-print/{{ $node[\"Webhook\"].json.body.filename }}",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "save",
+      "name": "Save to disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\n\n// ==== EDIT THESE TWO LINES FOR THIS PC =====================\nconst sumatra = 'C:\\\\Users\\\\YOURNAME\\\\AppData\\\\Local\\\\SumatraPDF\\\\SumatraPDF.exe';\nconst printer = 'HP LaserJet 1020';\n// ===========================================================\n\nconst body = $node[\"Webhook\"].json.body;\n\nconst copies = body.copies || 1;\nconst color = body.color ? 'color' : 'monochrome';\nconst duplex = body.duplex ? ',duplexlong' : '';\nconst settings = `${copies}x,${color}${duplex}`;\nconst file = `C:\\\\uulen-print\\\\${body.filename}`;\n\nconst cmd = `\"${sumatra}\" -print-to \"${printer}\" -print-settings \"${settings}\" -silent \"${file}\"`;\nexecSync(cmd, { windowsHide: true });\n\nreturn { jobId: body.jobId, chatId: body.chatId, printed: true };"
+      },
+      "id": "print",
+      "name": "Print",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=✅ printed job {{ $json.jobId }}",
+        "additionalFields": {}
+      },
+      "id": "ack",
+      "name": "Ack in chat",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1080, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "SELECT_YOUR_CREDENTIAL_AFTER_IMPORT",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Download file", "type": "main", "index": 0 }]]
+    },
+    "Download file": {
+      "main": [[{ "node": "Save to disk", "type": "main", "index": 0 }]]
+    },
+    "Save to disk": {
+      "main": [[{ "node": "Print", "type": "main", "index": 0 }]]
+    },
+    "Print": {
+      "main": [[{ "node": "Ack in chat", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "note": "After import: (1) open 'Ack in chat' and select your Telegram credential, (2) open 'Print' and edit the sumatra path + printer name, (3) Publish."
+  }
+}

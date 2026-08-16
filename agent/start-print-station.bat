@@ -21,4 +21,6 @@ echo  n8n:     http://localhost:5678
 echo  Keep BOTH windows open while the shop is operating.
 echo.
 
-npx n8n
+REM Version is pinned: running an OLDER n8n against a database created by a
+REM newer one can corrupt it. Bump deliberately, never by accident.
+npx -y n8n@2.34.6

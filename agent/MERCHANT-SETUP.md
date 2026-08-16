@@ -259,12 +259,32 @@ If all four happen — the station is live. 🎉
 
 ## Daily operation
 
-- **To start** (after reboot or each morning): double-click
-  `start-print-station.bat`. Two windows open — **keep both open** while the
-  shop operates.
-- **To stop**: close both windows (or Ctrl+C in each).
-- The ngrok static domain never changes, so nothing needs to be reconfigured
-  after a restart.
+### Starting (each morning / after any reboot)
+
+1. Double-click `start-print-station.bat`.
+2. Wait for the ngrok window to show `Session Status: online` and the n8n
+   window to show `Editor is now accessible via:`.
+3. **Keep both windows open** while the shop operates. Nothing needs to be
+   reconfigured — the domain, workflows, and credentials persist.
+
+### Stopping (before shutting down the PC)
+
+1. Check the printer is idle (optionally: n8n → **Executions** — no run in
+   progress).
+2. Close the **n8n** window (Ctrl+C inside it, or the window's X).
+3. Close the **ngrok** window the same way.
+4. Shut down Windows normally.
+
+Order doesn't strictly matter and nothing breaks if the PC dies abruptly —
+workflows and settings live on disk and survive.
+
+### While the station is OFF
+
+- Customers who choose this printer get an **automatic refund**: the cloud app
+  detects the webhook is unreachable and returns their money immediately. No
+  payments are lost and no jobs queue up.
+- For long closures (holidays), ask the Үүлэн Хэвлэл admin to deactivate the
+  printer so customers don't see it at all.
 
 ### Optional: start automatically when the PC boots
 

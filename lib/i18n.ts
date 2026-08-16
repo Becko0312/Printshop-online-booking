@@ -196,6 +196,9 @@ export const t = {
       "Telegram-аар хэвлэх зам идэвхжүүлэхийн тулд ботын токен ба чат ID-г нэмнэ үү. @BotFather ботоос токен авч, өөрийн бот руу /start илгээгээд chat_id-г тодорхойлно уу.",
     telegramBotToken: "Bot token",
     telegramChatId: "Chat ID",
+    n8nWebhookUrl: "n8n Webhook URL",
+    n8nWebhookUrlHint:
+      "n8n workflow-ийн Webhook node-ийн production URL. Файл автоматаар хэвлэгдэхийн тулд заавал шаардлагатай (Telegram бот өөрийн илгээсэн мессежийг хүлээж авдаггүй).",
     telegramReady: "Telegram холбогдсон",
     telegramNotReady: "Telegram холбогдоогүй",
   },

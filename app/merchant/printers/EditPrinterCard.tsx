@@ -16,6 +16,7 @@ export type EditablePrinter = {
   printNodeId: number | null;
   telegramBotToken: string | null;
   telegramChatId: string | null;
+  n8nWebhookUrl: string | null;
 };
 
 export default function EditPrinterCard({ printer }: { printer: EditablePrinter }) {
@@ -202,6 +203,27 @@ export default function EditPrinterCard({ printer }: { printer: EditablePrinter 
                   autoComplete="off"
                   spellCheck={false}
                 />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  className="label"
+                  htmlFor={`n8nWebhookUrl-${printer.id}`}
+                >
+                  {t.merchant.n8nWebhookUrl}
+                </label>
+                <input
+                  id={`n8nWebhookUrl-${printer.id}`}
+                  name="n8nWebhookUrl"
+                  className="input"
+                  maxLength={300}
+                  placeholder="https://xxxx.ngrok-free.dev/webhook/uulen-print"
+                  defaultValue={printer.n8nWebhookUrl ?? ""}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {t.merchant.n8nWebhookUrlHint}
+                </p>
               </div>
             </div>
           </div>

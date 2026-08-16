@@ -59,10 +59,13 @@ model Printer {
   colorCentsPerPage  Int?
   // Telegram / n8n delivery. When both are set, this printer can accept jobs
   // via the "telegram" deliveryMethod: the app posts the file to Telegram's
-  // sendDocument for (botToken, chatId), and a merchant-side n8n workflow on
-  // the shop PC picks it up from the chat and prints locally.
+  // sendDocument for (botToken, chatId) as an audit trail, and POSTs the job
+  // to the merchant's n8n webhook (n8nWebhookUrl) which downloads + prints.
+  // The webhook is required for automatic printing: Telegram never delivers a
+  // bot's own messages back to that bot, so a chat-triggered flow can't fire.
   telegramBotToken   String?
   telegramChatId     String?
+  n8nWebhookUrl      String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

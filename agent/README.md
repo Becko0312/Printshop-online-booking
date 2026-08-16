@@ -136,16 +136,25 @@ the file from Telegram's servers, prints it, and replies to the chat.
 
 ## How it works
 
-- Customer picks **Telegram / n8n** on the upload page → the app posts the file
-  to the merchant's bot with a caption like
-  `job:cmxxx copies:2 color:0 duplex:1` (this is how n8n reads the options).
-- n8n's Telegram Trigger fires on the new message → writes the file to a temp
-  path → runs SumatraPDF (Windows) or `lp` (Linux/macOS) with the parsed
-  options → replies in the chat with `✅ printed job cmxxx`.
+- Customer picks **Telegram / n8n** on the upload page → the app:
+  1. posts the file to the merchant's bot chat with a caption like
+     `job:cmxxx copies:2 color:0 duplex:1` — this is the **audit trail**;
+  2. POSTs the job to the printer's **n8n Webhook URL** with JSON
+     `{ jobId, filename, fileUrl, copies, color, duplex, chatId }` — this is
+     the actual **trigger**.
+- Why both? Telegram never delivers a bot's *own* messages back to that bot's
+  webhook (anti-loop rule), so a chat-message trigger can't fire for files the
+  app sends as the bot. The direct webhook sidesteps that; the chat message
+  remains as a human-readable log.
+- n8n's Webhook node fires → HTTP Request downloads `fileUrl` (a public Blob
+  URL) → writes to disk → runs SumatraPDF (Windows) or `lp` (Linux/macOS) with
+  the parsed options → sends `✅ printed job cmxxx` to the chat.
 - Wallet is already debited when the app dispatches. Dispatch failure (bad
-  token, chat blocked, Telegram down) refunds automatically. Print failures on
+  token, chat blocked, webhook down) refunds automatically. Print failures on
   the shop side are visible in the Telegram chat and in n8n's execution log —
   they don't refund automatically today (the file did reach the merchant).
+- A separate Telegram-Trigger workflow can coexist for files people forward to
+  the bot manually from their own accounts (those *do* fire the trigger).
 
 ## Why choose this path
 

@@ -38,6 +38,7 @@ export default async function MerchantPrintersPage() {
                 printNodeId: p.printNodeId,
                 telegramBotToken: p.telegramBotToken,
                 telegramChatId: p.telegramChatId,
+                n8nWebhookUrl: p.n8nWebhookUrl,
               }}
             />
           ))}

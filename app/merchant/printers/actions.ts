@@ -30,6 +30,7 @@ const editPrinterSchema = z.object({
   // separator only, so we don't reject valid tokens on cosmetic changes.
   telegramBotToken: z.string().max(120).optional(),
   telegramChatId: z.string().max(64).optional(),
+  n8nWebhookUrl: z.string().url().max(300).optional(),
 });
 
 export type PrinterFormResult = { error?: string; ok?: boolean } | undefined;
@@ -92,6 +93,8 @@ export async function editMyPrinterAction(
       String(formData.get("telegramBotToken") ?? "").trim() || undefined,
     telegramChatId:
       String(formData.get("telegramChatId") ?? "").trim() || undefined,
+    n8nWebhookUrl:
+      String(formData.get("n8nWebhookUrl") ?? "").trim() || undefined,
   });
   if (!parsed.success) return { error: t.admin.fieldRequired };
 
@@ -112,6 +115,7 @@ export async function editMyPrinterAction(
       duplexSupported: !!parsed.data.duplexSupported,
       telegramBotToken: parsed.data.telegramBotToken ?? null,
       telegramChatId: parsed.data.telegramChatId ?? null,
+      n8nWebhookUrl: parsed.data.n8nWebhookUrl ?? null,
     },
   });
 

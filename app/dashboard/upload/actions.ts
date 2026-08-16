@@ -189,9 +189,11 @@ export async function submitPrintJobAction(
     return { ok: true, jobId: job.id };
   }
 
-  // Telegram delivery: post the file to the merchant's bot. The shop-side n8n
-  // workflow watches that chat and prints. Refund on dispatch failure since
-  // the job never reached the shop.
+  // Telegram delivery: post the file to the merchant's bot chat (audit trail)
+  // and trigger the merchant's n8n webhook, which downloads the file and
+  // prints locally. The webhook is the actual trigger — Telegram never
+  // delivers a bot's own messages back to that bot, so the chat message alone
+  // can't start the shop-side workflow. Refund on dispatch failure.
   if (parsed.data.method === "telegram") {
     try {
       if (!printer.telegramBotToken || !printer.telegramChatId) {
@@ -213,6 +215,31 @@ export async function submitPrintJobAction(
           `duplex:${parsed.data.duplex ? 1 : 0}`,
         ].join(" "),
       });
+
+      // Trigger the shop-side n8n workflow directly. storedPath is a public
+      // Blob URL in production, which n8n downloads and prints.
+      if (printer.n8nWebhookUrl) {
+        const isUrl = /^https?:\/\//.test(upload.storedPath);
+        const res = await fetch(printer.n8nWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            jobId: job.id,
+            filename: upload.filename,
+            mimeType: upload.mimeType,
+            fileUrl: isUrl ? upload.storedPath : null,
+            copies: parsed.data.copies,
+            color: !!parsed.data.color,
+            duplex: !!parsed.data.duplex,
+            chatId: printer.telegramChatId,
+          }),
+        });
+        if (!res.ok) {
+          throw new Error(`n8n webhook ${res.status}: ${res.statusText}`);
+        }
+      }
+
       await prisma.printJob.update({
         where: { id: job.id },
         data: { status: "sent" },

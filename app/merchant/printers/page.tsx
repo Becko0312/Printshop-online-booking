@@ -61,6 +61,67 @@ export default async function MerchantPrintersPage() {
       )}
 
       <AddPrinterForm />
+
+      <ConnectInstructions />
     </div>
+  );
+}
+
+function ConnectInstructions() {
+  const c = t.merchant.connect;
+  return (
+    <section className="card p-5 space-y-4">
+      <div>
+        <h2 className="font-semibold">{c.title}</h2>
+        <p className="text-slate-500 text-sm mt-1">{c.subtitle}</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Method 1 — PrintNode client */}
+        <div className="rounded-lg border border-slate-200 p-4">
+          <h3 className="text-sm font-semibold text-slate-800">
+            {c.printnodeTitle}
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-500">{c.printnodeHint}</p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-4 text-sm text-slate-600">
+            {c.printnodeSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <a
+            href="https://www.printnode.com/en/download"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost mt-3 inline-block text-sm"
+          >
+            printnode.com/download →
+          </a>
+        </div>
+
+        {/* Method 2 — standalone script */}
+        <div className="rounded-lg border border-slate-200 p-4">
+          <h3 className="text-sm font-semibold text-slate-800">
+            {c.agentTitle}
+          </h3>
+          <p className="mt-0.5 text-xs text-slate-500">{c.agentHint}</p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-4 text-sm text-slate-600">
+            {c.agentSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <div className="mt-3 rounded-md bg-amber-50 p-2.5 text-xs text-amber-800">
+            <span className="font-medium">{c.tokenLabel}:</span>{" "}
+            {c.tokenComingSoon}
+          </div>
+          <a
+            href="/print-agent.zip"
+            download
+            className="btn-primary mt-3 inline-block text-sm"
+          >
+            ⬇ {c.download}
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }

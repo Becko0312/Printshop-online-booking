@@ -1,0 +1,16 @@
+{
+  "name": "khevlekh-uul-print-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone print agent for Khevlekh Uul — polls the server for print jobs and prints them locally (self-hosted alternative to PrintNode).",
+  "type": "commonjs",
+  "bin": {
+    "khevlekh-uul-agent": "agent.js"
+  },
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

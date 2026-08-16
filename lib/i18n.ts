@@ -161,6 +161,33 @@ export const t = {
     myPrinters: "Миний хэвлэгчид",
     pendingConnect: "PrintNode-д холбогдоогүй",
     created: "Хэвлэгч нэмэгдлээ.",
+    connect: {
+      title: "Хэвлэгч холбох",
+      subtitle:
+        "Хэвлэгчээ нэмсний дараа доорх хоёр аргын аль нэгээр дэлгүүрийн компьютерийг серверт холбоно.",
+      printnodeTitle: "Арга 1 · PrintNode Client",
+      printnodeHint: "Хамгийн хялбар. PrintNode-ийн хэвлэлт тутмын төлбөртэй.",
+      printnodeSteps: [
+        "printnode.com дээр бүртгүүлж, дэлгүүрийн компьютерт PrintNode Client-ийг татаж суулгана.",
+        "PrintNode Client-д нэвтэрч, хэвлэгчээ илрүүлэхийг хүлээнэ.",
+        "Хэвлэгчийн нэрийг дээр нэмсэн нэртэйгээ яг адил болгоно.",
+        "Админд мэдэгдэж идэвхжүүлүүлнэ (админ sync хийнэ).",
+      ],
+      agentTitle: "Арга 2 · Standalone script",
+      agentHint:
+        "PrintNode-гүйгээр. Node.js 18+ шаардлагатай, npm install хэрэггүй.",
+      agentSteps: [
+        "Доорх .zip-ийг татаж, дэлгүүрийн компьютерт задлана.",
+        "Node.js 18+ суулгана (nodejs.org).",
+        ".env.example-г .env болгож хуулаад, доорх токеноо оруулна.",
+        "Терминал дээр `node agent.js` гэж ажиллуулна. Windows дээр SumatraPDF шаардлагатай.",
+        "Дэлгэрэнгүйг README.md-ээс уншина уу.",
+      ],
+      download: "Print agent татах (.zip)",
+      tokenLabel: "Таны agent токен",
+      tokenComingSoon:
+        "Standalone аргыг серверт идэвхжүүлсний дараа энд токен харагдана.",
+    },
   },
   admin: {
     title: "Админ самбар",

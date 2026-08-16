@@ -161,6 +161,10 @@ export const t = {
     myPrinters: "Миний хэвлэгчид",
     pendingConnect: "PrintNode-д холбогдоогүй",
     created: "Хэвлэгч нэмэгдлээ.",
+    standaloneActive: "Standalone идэвхтэй",
+    printerKey: "Холбох түлхүүр",
+    activateStandalone: "Standalone-аар идэвхжүүлэх",
+    deactivate: "Идэвхгүй болгох",
     connect: {
       title: "Хэвлэгч холбох",
       subtitle:
@@ -179,14 +183,15 @@ export const t = {
       agentSteps: [
         "Доорх .zip-ийг татаж, дэлгүүрийн компьютерт задлана.",
         "Node.js 18+ суулгана (nodejs.org).",
-        ".env.example-г .env болгож хуулаад, доорх токеноо оруулна.",
-        "Терминал дээр `node agent.js` гэж ажиллуулна. Windows дээр SumatraPDF шаардлагатай.",
-        "Дэлгэрэнгүйг README.md-ээс уншина уу.",
+        ".env.example-г .env болгож хуулаад: API_BASE_URL, AGENT_TOKEN (доор), PRINTER_KEY (хэвлэгчийн 'Холбох түлхүүр').",
+        "Тухайн хэвлэгчээ дээрх жагсаалтаас 'Standalone-аар идэвхжүүлэх' дарж идэвхжүүлнэ.",
+        "Терминал дээр `node agent.js` ажиллуулна. Windows дээр SumatraPDF шаардлагатай.",
+        "Дэлгэрэнгүй болон өөр PC холбох зааврыг README.md-ээс уншина уу.",
       ],
       download: "Print agent татах (.zip)",
       tokenLabel: "Таны agent токен",
-      tokenComingSoon:
-        "Standalone аргыг серверт идэвхжүүлсний дараа энд токен харагдана.",
+      tokenHint: "Нууц. Бүх PC дээрх agent энэ нэг токеныг ашиглана.",
+      generateToken: "Agent токен үүсгэх",
     },
   },
   admin: {

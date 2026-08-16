@@ -71,6 +71,19 @@ export async function saveUpload(
 }
 
 /**
+ * Read an upload's bytes regardless of where it lives (Blob URL or local disk).
+ * Used by the standalone print-agent file proxy (/api/agent/jobs/[id]/file).
+ */
+export async function readUpload(storedPath: string): Promise<Buffer> {
+  if (/^https?:\/\//.test(storedPath)) {
+    const res = await fetch(storedPath, { cache: "no-store" });
+    if (!res.ok) throw new Error(`fetch upload failed: ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+  }
+  return fs.readFile(path.join(UPLOAD_DIR, storedPath));
+}
+
+/**
  * Return the content PrintNode should ingest. If we have a URL we pass it
  * through as `*_uri` (PrintNode fetches it directly, much faster than
  * base64). Otherwise we base64-encode the local file.

@@ -27,6 +27,9 @@ model User {
   phone         String?
   role          Role     @default(CUSTOMER)
   walletCents   Int      @default(0)
+  // Bearer token used by a merchant's standalone print agent(s) to authenticate
+  // against /api/agent/*. Null until the merchant generates one.
+  agentToken    String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

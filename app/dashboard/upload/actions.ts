@@ -152,51 +152,55 @@ export async function submitPrintJobAction(
     return { ok: false, error: "Үлдэгдэл хүрэлцэхгүй. Хэтэвчээ цэнэглэнэ үү." };
   }
 
-  // Dispatch to PrintNode (best-effort — if it fails we mark the job failed
-  // and refund. If PrintNode isn't configured yet we still keep the job as
-  // "queued" so shops can pick up manually.)
-  try {
-    if (!printer.printNodeId) throw new Error("Хэвлэгч PrintNode-д холбогдоогүй.");
-    const payload = await contentForPrintNode(upload.storedPath, upload.mimeType);
-    const printNodeJobId = await createPrintJob({
-      printerId: printer.printNodeId,
-      title: upload.filename,
-      contentType: payload.contentType,
-      content: payload.content,
-      source: "khevlekh-uul",
-      options: {
-        copies: parsed.data.copies,
-        color: parsed.data.color ? true : undefined,
-        duplex: parsed.data.duplex ? "long-edge" : "one-sided",
-      },
-    });
-    await prisma.printJob.update({
-      where: { id: job.id },
-      // printNodeJobId is a BigInt column; PrintNode returns a plain number.
-      data: { status: "sent", printNodeJobId: BigInt(printNodeJobId) },
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Тодорхойгүй алдаа";
-    // Refund on dispatch failure — job never reached the printer.
-    await prisma.$transaction([
-      prisma.printJob.update({
-        where: { id: job.id },
-        data: { status: "failed", errorMessage: message },
-      }),
-      prisma.user.update({
-        where: { id: user.id },
-        data: { walletCents: { increment: costCents } },
-      }),
-      prisma.walletTx.create({
-        data: {
-          userId: user.id,
-          amountCents: costCents,
-          kind: "refund",
-          description: `Буцаалт: ${upload.filename}`,
+  // Dispatch. Two printer types:
+  //  - PrintNode printer (printNodeId set): push to PrintNode now; refund on
+  //    failure since the job never reached the printer.
+  //  - Standalone printer (no printNodeId): leave the job "queued" for the
+  //    shop's local print agent to claim via GET /api/agent/jobs. The agent
+  //    reports the result (and any refund) via POST /api/agent/jobs/[id].
+  if (printer.printNodeId) {
+    try {
+      const payload = await contentForPrintNode(upload.storedPath, upload.mimeType);
+      const printNodeJobId = await createPrintJob({
+        printerId: printer.printNodeId,
+        title: upload.filename,
+        contentType: payload.contentType,
+        content: payload.content,
+        source: "khevlekh-uul",
+        options: {
+          copies: parsed.data.copies,
+          color: parsed.data.color ? true : undefined,
+          duplex: parsed.data.duplex ? "long-edge" : "one-sided",
         },
-      }),
-    ]);
-    return { ok: false, error: `PrintNode алдаа: ${message}` };
+      });
+      await prisma.printJob.update({
+        where: { id: job.id },
+        // printNodeJobId is a BigInt column; PrintNode returns a plain number.
+        data: { status: "sent", printNodeJobId: BigInt(printNodeJobId) },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Тодорхойгүй алдаа";
+      // Refund on dispatch failure — job never reached the printer.
+      await prisma.$transaction([
+        prisma.printJob.update({
+          where: { id: job.id },
+          data: { status: "failed", errorMessage: message },
+        }),
+        prisma.user.update({
+          where: { id: user.id },
+          data: { walletCents: { increment: costCents } },
+        }),
+        prisma.walletTx.create({
+          data: {
+            userId: user.id,
+            amountCents: costCents,
+            kind: "refund",
+            description: `Буцаалт: ${upload.filename}`,
+          },
+        }),
+      ]);
+      return { ok: false, error: `PrintNode алдаа: ${message}` };
+    }
   }
 
   revalidatePath("/dashboard");

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireMerchant } from "@/lib/session";
+import { newAgentToken } from "@/lib/agent";
 import { t } from "@/lib/i18n";
 
 const addPrinterSchema = z.object({
@@ -53,4 +54,47 @@ export async function addMyPrinterAction(
   revalidatePath("/merchant/printers");
   revalidatePath("/merchant");
   return { ok: true };
+}
+
+// Generate the merchant's standalone-agent token if they don't have one yet.
+// Idempotent: keeps the existing token if already set.
+export async function generateAgentTokenAction(): Promise<void> {
+  const user = await requireMerchant();
+  if (!user.agentToken) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { agentToken: newAgentToken() },
+    });
+  }
+  revalidatePath("/merchant/printers");
+}
+
+// Activate one of the merchant's printers for the standalone agent. The printer
+// keeps no printNodeId; being active + printNodeId-less marks it agent-driven,
+// so customer print jobs stay "queued" for the local agent to claim.
+export async function activateStandaloneAction(formData: FormData): Promise<void> {
+  const user = await requireMerchant();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  // Scope to a printer this merchant owns; never touch a PrintNode-linked one.
+  await prisma.printer.updateMany({
+    where: { id, merchantId: user.id, printNodeId: null },
+    data: { active: true },
+  });
+  revalidatePath("/merchant/printers");
+  revalidatePath("/merchant");
+}
+
+// Deactivate an agent-driven printer (e.g. shop is closing / agent offline) so
+// customers can no longer select it.
+export async function deactivateStandaloneAction(formData: FormData): Promise<void> {
+  const user = await requireMerchant();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.printer.updateMany({
+    where: { id, merchantId: user.id, printNodeId: null },
+    data: { active: false },
+  });
+  revalidatePath("/merchant/printers");
+  revalidatePath("/merchant");
 }

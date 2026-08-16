@@ -2,6 +2,11 @@ import { prisma } from "@/lib/db";
 import { requireMerchant } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import AddPrinterForm from "./AddPrinterForm";
+import {
+  activateStandaloneAction,
+  deactivateStandaloneAction,
+  generateAgentTokenAction,
+} from "./actions";
 
 export default async function MerchantPrintersPage() {
   const user = await requireMerchant();
@@ -23,7 +28,8 @@ export default async function MerchantPrintersPage() {
       ) : (
         <ul className="grid md:grid-cols-2 gap-3">
           {printers.map((p) => {
-            const online = p.active && p.printNodeId != null;
+            const printNode = p.active && p.printNodeId != null;
+            const standalone = p.active && p.printNodeId == null;
             return (
               <li key={p.id} className="card p-4">
                 <div className="flex items-start justify-between">
@@ -36,14 +42,21 @@ export default async function MerchantPrintersPage() {
                   <span
                     className={
                       "chip " +
-                      (online
+                      (printNode
                         ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-500")
+                        : standalone
+                          ? "bg-sky-50 text-sky-700"
+                          : "bg-slate-100 text-slate-500")
                     }
                   >
-                    {online ? t.printers.online : t.merchant.pendingConnect}
+                    {printNode
+                      ? t.printers.online
+                      : standalone
+                        ? t.merchant.standaloneActive
+                        : t.merchant.pendingConnect}
                   </span>
                 </div>
+
                 <div className="mt-2 flex flex-wrap gap-1">
                   <span className="chip bg-slate-100 text-slate-600">
                     {p.colorSupported ? t.printers.supportsColor : t.printers.supportsBw}
@@ -54,6 +67,37 @@ export default async function MerchantPrintersPage() {
                     </span>
                   )}
                 </div>
+
+                {/* Standalone-agent connect key + activation (only relevant for
+                    printers not linked to PrintNode). */}
+                {p.printNodeId == null && (
+                  <div className="mt-3 border-t border-slate-100 pt-3">
+                    <div className="text-xs text-slate-500">
+                      {t.merchant.printerKey} (PRINTER_KEY)
+                    </div>
+                    <code className="mt-0.5 block break-all rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
+                      {p.id}
+                    </code>
+                    <form
+                      action={
+                        standalone
+                          ? deactivateStandaloneAction
+                          : activateStandaloneAction
+                      }
+                      className="mt-2"
+                    >
+                      <input type="hidden" name="id" value={p.id} />
+                      <button
+                        type="submit"
+                        className={standalone ? "btn-ghost text-sm" : "btn-primary text-sm"}
+                      >
+                        {standalone
+                          ? t.merchant.deactivate
+                          : t.merchant.activateStandalone}
+                      </button>
+                    </form>
+                  </div>
+                )}
               </li>
             );
           })}
@@ -62,12 +106,12 @@ export default async function MerchantPrintersPage() {
 
       <AddPrinterForm />
 
-      <ConnectInstructions />
+      <ConnectInstructions agentToken={user.agentToken} />
     </div>
   );
 }
 
-function ConnectInstructions() {
+function ConnectInstructions({ agentToken }: { agentToken: string | null }) {
   const c = t.merchant.connect;
   return (
     <section className="card p-5 space-y-4">
@@ -109,10 +153,26 @@ function ConnectInstructions() {
               <li key={step}>{step}</li>
             ))}
           </ol>
-          <div className="mt-3 rounded-md bg-amber-50 p-2.5 text-xs text-amber-800">
-            <span className="font-medium">{c.tokenLabel}:</span>{" "}
-            {c.tokenComingSoon}
+
+          {/* Agent token */}
+          <div className="mt-3">
+            <div className="text-xs text-slate-500">{c.tokenLabel} (AGENT_TOKEN)</div>
+            {agentToken ? (
+              <>
+                <code className="mt-0.5 block break-all rounded bg-slate-50 px-2 py-1 text-xs text-slate-700">
+                  {agentToken}
+                </code>
+                <p className="mt-1 text-xs text-amber-700">{c.tokenHint}</p>
+              </>
+            ) : (
+              <form action={generateAgentTokenAction} className="mt-1">
+                <button type="submit" className="btn-ghost text-sm">
+                  {c.generateToken}
+                </button>
+              </form>
+            )}
           </div>
+
           <a
             href="/print-agent.zip"
             download

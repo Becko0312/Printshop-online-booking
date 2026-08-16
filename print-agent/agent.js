@@ -63,6 +63,10 @@ loadEnv();
 const CONFIG = {
   apiBaseUrl: (process.env.API_BASE_URL || "").replace(/\/$/, ""),
   agentToken: process.env.AGENT_TOKEN || "",
+  // Which server-side printer this PC drives. Copy the printer's
+  // "Холбох түлхүүр" (PRINTER_KEY) from your merchant dashboard. This is what
+  // lets each PC pull only its own printer's jobs — no double printing.
+  printerKey: process.env.PRINTER_KEY || "",
   // Optional: force a specific OS printer name/queue. Empty = system default.
   printerName: process.env.PRINTER_NAME || "",
   // How often to check for new jobs, in seconds.
@@ -78,6 +82,7 @@ function fail(msg) {
 
 if (!CONFIG.apiBaseUrl) fail("API_BASE_URL is not set in .env");
 if (!CONFIG.agentToken) fail("AGENT_TOKEN is not set in .env");
+if (!CONFIG.printerKey) fail("PRINTER_KEY is not set in .env");
 if (typeof fetch !== "function") {
   fail("This agent needs Node.js 18+ (global fetch is missing).");
 }
@@ -101,9 +106,10 @@ function authHeaders(extra) {
 }
 
 async function fetchJobs() {
-  const res = await fetch(`${CONFIG.apiBaseUrl}/api/agent/jobs`, {
-    headers: authHeaders(),
-  });
+  const url =
+    `${CONFIG.apiBaseUrl}/api/agent/jobs?printer=` +
+    encodeURIComponent(CONFIG.printerKey);
+  const res = await fetch(url, { headers: authHeaders() });
   if (res.status === 401) {
     throw new Error("Unauthorized — check AGENT_TOKEN in .env");
   }
@@ -252,6 +258,7 @@ async function tick() {
 
 log(`Khevlekh Uul print agent started`);
 log(`  server : ${CONFIG.apiBaseUrl}`);
+log(`  key    : ${CONFIG.printerKey}`);
 log(`  printer: ${CONFIG.printerName || "(system default)"}`);
 log(`  os     : ${os.platform()} / ${IS_WINDOWS ? "SumatraPDF" : "CUPS lp"}`);
 log(`  polling every ${CONFIG.pollSeconds}s …`);

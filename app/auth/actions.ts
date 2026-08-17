@@ -24,13 +24,21 @@ export type FormResult = { error?: string } | undefined;
 
 export async function signUpAction(_prev: FormResult, formData: FormData): Promise<FormResult> {
   const roleInput = String(formData.get("role") ?? "CUSTOMER").toUpperCase();
+  const role = roleInput === "MERCHANT" ? "MERCHANT" : "CUSTOMER";
+  const phone = String(formData.get("phone") ?? "").trim();
   const parsed = signUpSchema.safeParse({
     email: String(formData.get("email") ?? "").trim().toLowerCase(),
     password: String(formData.get("password") ?? ""),
     name: String(formData.get("name") ?? "").trim() || undefined,
-    role: roleInput === "MERCHANT" ? "MERCHANT" : "CUSTOMER",
+    role,
   });
   if (!parsed.success) return { error: "И-мэйл эсвэл нууц үг буруу." };
+
+  // Merchants must provide a phone number (customers can pick up prints from a
+  // shop, so we need a way to reach them). Accept 6+ chars to allow +976 etc.
+  if (role === "MERCHANT" && phone.replace(/\D/g, "").length < 6) {
+    return { error: "Мерчантаар бүртгүүлэхэд утасны дугаар оруулна уу." };
+  }
 
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (existing) return { error: "Энэ и-мэйл аль хэдийн бүртгэлтэй байна." };
@@ -42,6 +50,7 @@ export async function signUpAction(_prev: FormResult, formData: FormData): Promi
       passwordHash,
       name: parsed.data.name,
       role: parsed.data.role,
+      phone: phone || undefined,
     },
   });
   await createSession(user.id);

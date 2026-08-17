@@ -59,6 +59,29 @@ export default function SignUpPage() {
             <input id="name" name="name" type="text" className="input" />
           </div>
           <div>
+            <label className="label" htmlFor="phone">
+              {t.common.phone}
+              {role === "MERCHANT" && (
+                <span className="ml-1 text-rose-600">*</span>
+              )}
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              className="input"
+              required={role === "MERCHANT"}
+              placeholder={role === "MERCHANT" ? "99xxxxxx" : undefined}
+            />
+            {role === "MERCHANT" && (
+              <p className="mt-1 text-xs text-slate-500">
+                Мерчантаар бүртгүүлэхэд утасны дугаар заавал шаардлагатай.
+              </p>
+            )}
+          </div>
+          <div>
             <label className="label" htmlFor="email">
               {t.common.email}
             </label>

@@ -3,6 +3,7 @@ import { requireMerchant } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import AddPrinterForm from "./AddPrinterForm";
 import EditPrinterCard from "./EditPrinterCard";
+import SetupManual from "./SetupManual";
 
 export default async function MerchantPrintersPage() {
   const user = await requireMerchant();
@@ -46,6 +47,8 @@ export default async function MerchantPrintersPage() {
       )}
 
       <AddPrinterForm />
+
+      <SetupManual />
     </div>
   );
 }

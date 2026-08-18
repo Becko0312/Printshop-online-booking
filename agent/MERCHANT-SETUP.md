@@ -8,6 +8,9 @@ station** for the uulen.xyz cloud printing service. After setup, when a
 customer pays and uploads a file on the website, the file prints on the shop's
 printer within seconds — no human action needed.
 
+> Shop PC runs Linux instead? Use the Linux edition of this manual:
+> [`MERCHANT-SETUP-LINUX.md`](./MERCHANT-SETUP-LINUX.md).
+
 ## How it works
 
 ```

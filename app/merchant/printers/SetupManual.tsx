@@ -3,7 +3,7 @@
 // Telegram bot). This mirrors agent/MERCHANT-SETUP.md in Mongolian, in
 // collapsible <details> sections (native — no client JS needed).
 
-function Cmd({ children }: { children: string }) {
+export function Cmd({ children }: { children: string }) {
   return (
     <pre className="mt-2 overflow-x-auto rounded-md bg-slate-900 p-3 text-xs text-slate-100">
       <code>{children}</code>
@@ -11,7 +11,7 @@ function Cmd({ children }: { children: string }) {
   );
 }
 
-function Step({
+export function Step({
   n,
   title,
   children,

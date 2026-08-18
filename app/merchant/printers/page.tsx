@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import AddPrinterForm from "./AddPrinterForm";
 import EditPrinterCard from "./EditPrinterCard";
 import SetupManual from "./SetupManual";
+import SetupManualLinux from "./SetupManualLinux";
 
 export default async function MerchantPrintersPage() {
   const user = await requireMerchant();
@@ -49,6 +50,8 @@ export default async function MerchantPrintersPage() {
       <AddPrinterForm />
 
       <SetupManual />
+
+      <SetupManualLinux />
     </div>
   );
 }

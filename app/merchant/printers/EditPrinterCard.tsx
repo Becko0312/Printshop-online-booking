@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { t } from "@/lib/i18n";
+import CopyId from "@/components/CopyId";
 import { editMyPrinterAction, type PrinterFormResult } from "./actions";
 
 export type EditablePrinter = {
@@ -37,6 +38,8 @@ export default function EditPrinterCard({ printer }: { printer: EditablePrinter 
           <div className="text-xs text-slate-500">
             {printer.district} · {printer.location}
           </div>
+          {/* Needed by the standalone print agent (see the manual below). */}
+          <CopyId id={printer.id} copy={t.common.copy} copied={t.common.copied} />
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <span

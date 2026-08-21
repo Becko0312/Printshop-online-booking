@@ -5,6 +5,7 @@ import AddPrinterForm from "./AddPrinterForm";
 import EditPrinterCard from "./EditPrinterCard";
 import SetupManual from "./SetupManual";
 import SetupManualLinux from "./SetupManualLinux";
+import SetupManualAgent from "./SetupManualAgent";
 
 export default async function MerchantPrintersPage() {
   const user = await requireMerchant();
@@ -48,6 +49,8 @@ export default async function MerchantPrintersPage() {
       )}
 
       <AddPrinterForm />
+
+      <SetupManualAgent />
 
       <SetupManual />
 

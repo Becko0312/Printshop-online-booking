@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { t } from "@/lib/i18n";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: `${t.brand} — Cloud Print SaaS`,
@@ -14,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="mn">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased flex flex-col">
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }

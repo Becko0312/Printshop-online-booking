@@ -2,6 +2,10 @@
 // Keeping strings in one place makes it easy to add English later.
 export const t = {
   brand: "Үүлэн Хэвлэл",
+  footer: {
+    phone: "99333506",
+    email: "becko0312@gmail.com",
+  },
   tagline: "Улаанбаатар даяарх 100+ хэвлэгчид үүлнээс шууд илгээ",
   common: {
     signIn: "Нэвтрэх",

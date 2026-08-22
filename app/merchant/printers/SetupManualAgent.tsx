@@ -131,7 +131,7 @@ export default function SetupManualAgent() {
           <p>
             <strong>Linux / macOS</strong> (нэг мөр, өөрийн утгуудаар солино):
           </p>
-          <Cmd>{`APP_URL="https://uulen.xyz" \\
+          <Cmd>{`APP_URL="https://cloud-printing-saas.vercel.app" \\
 AGENT_TOKEN="admin-аас_авсан_токен" \\
 PRINTER_ID="cxxxxxxxxxxxxxxxxxxxxxxxx" \\
 OS_PRINTER="HP_LaserJet_1020" \\
@@ -139,7 +139,7 @@ node print-agent.mjs`}</Cmd>
           <p>
             <strong>Windows</strong> (PowerShell):
           </p>
-          <Cmd>{`$env:APP_URL="https://uulen.xyz"
+          <Cmd>{`$env:APP_URL="https://cloud-printing-saas.vercel.app"
 $env:AGENT_TOKEN="admin-аас_авсан_токен"
 $env:PRINTER_ID="cxxxxxxxxxxxxxxxxxxxxxxxx"
 $env:OS_PRINTER="HP LaserJet 1020"

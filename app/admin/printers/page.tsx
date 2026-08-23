@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/session";
 import { t } from "@/lib/i18n";
 import { assignPrinterAction, removePrinterAction } from "../actions";
 import AddPrinterForm from "./AddPrinterForm";
-import CopyId from "./CopyId";
+import CopyId from "@/components/CopyId";
 
 function merchantLabel(m: { name: string | null; email: string }): string {
   return m.name ? `${m.name} (${m.email})` : m.email;
